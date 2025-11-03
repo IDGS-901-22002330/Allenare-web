@@ -1,22 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { auth } from '../firebase.js';
 import './LoginForm.css';
 
 const LoginForm = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Credenciales provisionales
-    if (username === 'admin' && password === 'admin') {
+    try {
+      await setPersistence(auth, inMemoryPersistence);
+
+      await signInWithEmailAndPassword(auth, email, password);
+
       setError('');
-      onLogin(); // Llama a la función para actualizar el estado de autenticación
+      onLogin();
       navigate('/dashboard');
-    } else {
-      setError('Usuario o contraseña incorrectos');
+    } catch (err) {
+      setError('Email o contraseña incorrectos. ' + err.message);
     }
   };
 
@@ -26,9 +31,9 @@ const LoginForm = ({ onLogin }) => {
       <div className="form-group">
         <input
           type="text"
-          placeholder="Usuario"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
       <div className="form-group">

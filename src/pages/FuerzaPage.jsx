@@ -12,8 +12,8 @@ const FuerzaPage = () => {
         <StatsSection title="Días de entrenamiento (fuerza)" content="workouts" className="inline-stats" />
       </div>
       <div className="registro-bottom-sections">
-        <RecentStrengthWorkouts />
-        <RegistroEjercicio />
+        <RecentStrengthWorkouts /> {/* Ahora RecentStrengthWorkouts carga sus propios datos de Firebase */}
+        <RegistroEjercicio /> {/* Ahora RegistroEjercicio guarda directamente en Firebase */}
       </div>
     </div>
   );

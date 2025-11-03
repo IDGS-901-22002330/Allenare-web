@@ -1,9 +1,8 @@
 import React from 'react';
 import Header from '../components/dashboard/Header';
 import StatsSection from '../components/dashboard/StatsSection';
-import RecentWorkouts from '../components/dashboard/RecentWorkouts';
 import RouteMap from '../components/dashboard/RouteMap';
-
+import CombinedRecentWorkouts from '../components/dashboard/CombinedRecentWorkouts';
 const DashboardPage = () => {
   return (
     <div className="dashboard-page-content">
@@ -14,7 +13,7 @@ const DashboardPage = () => {
         <StatsSection title="Metas" content="goals" />
       </div>
       <div className="bottom-sections">
-        <RecentWorkouts />
+        <CombinedRecentWorkouts /> {/* Usa el nuevo componente unificado */}
         <RouteMap />
       </div>
     </div>

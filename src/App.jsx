@@ -1,76 +1,97 @@
 import React, { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
-import RegistroPage from './pages/RegistroPage'; // Importar la página de Registro
-import EstadisticasPage from './pages/EstadisticasPage'; // Importar la página de Estadísticas
-import FuerzaPage from './pages/FuerzaPage'; // Importar la página de Fuerza
+import RegistroPage from './pages/RegistroPage';
+import EstadisticasPage from './pages/EstadisticasPage';
+import FuerzaPage from './pages/FuerzaPage';
 import LoginPage from './pages/LoginPage';
-import ProtectedRoute from './components/auth/ProtectedRoute.jsx'; // Ruta corregida para ProtectedRoute
-import Sidebar from './components/dashboard/Sidebar'; // Importar el Sidebar
+// import ProtectedRoute from './components/auth/ProtectedRoute.jsx'; // No lo estás usando aquí, lo cual está bien
+import Sidebar from './components/dashboard/Sidebar';
+import { auth } from './firebase.js'; // Importa tu instancia de auth
 import ReloadPrompt from './ReloadPrompt';
 import PWABadge from './PWABadge';
 import './App.css';
 
 // Componente de layout principal para rutas autenticadas
-const MainLayout = () => (
-  <div className="dashboard-container">
-    <div className="content-area"><Outlet /></div> {/* Área para el contenido de la página */}
-    <Sidebar />
-  </div>
+// 1. Recibe 'onLogout' como prop
+const MainLayout = ({ onLogout }) => (
+  <div className="dashboard-container">
+    <div className="content-area"><Outlet /></div> {/* Área para el contenido de la página */}
+    {/* 2. Pasa 'onLogout' al Sidebar */}
+    <Sidebar onLogout={onLogout} />
+  </div>
 );
 
+
 function App() {
-  // Revisa sessionStorage para mantener el estado de autenticación
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      return sessionStorage.getItem('isAuthenticated') === 'true';
-    } catch (e) {
-      console.warn('No se pudo acceder a sessionStorage. Se iniciará sin autenticación.');
-      return false;
-    }
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      const item = window.localStorage.getItem('isAuthenticated');
+      return item === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
 
-  // Actualiza sessionStorage cuando el estado de autenticación cambia
-  useEffect(() => {
-    try {
-      sessionStorage.setItem('isAuthenticated', isAuthenticated);
-    } catch (e) {
-      console.warn('No se pudo escribir en sessionStorage. El estado de autenticación no se persistirá.');
-    }
-  }, [isAuthenticated]);
+  const [currentUser, setCurrentUser] = useState(null); // Para almacenar el objeto de usuario de Firebase
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+        if (!isAuthenticated) setIsAuthenticated(true);
+        try {
+          window.localStorage.setItem('isAuthenticated', 'true'); // Mantener localStorage actualizado
+        } catch (e) {
+          console.warn('Failed to set isAuthenticated in localStorage:', e);
+        }
+      } else {
+        setCurrentUser(null);
+        if (isAuthenticated) setIsAuthenticated(false);
+        try {
+          window.localStorage.removeItem('isAuthenticated'); // Limpiar localStorage
+        } catch (e) {
+          console.warn('Failed to remove isAuthenticated from localStorage:', e);
+        }
+      }
+    });
+    return () => unsubscribe(); // Limpiar el listener
+  }, [isAuthenticated]);
 
-  return (
-    <> {/* Fragment para envolver componentes globales y el Router */}
-      <ReloadPrompt />
-      <PWABadge />
-      <Router>
-        <Routes>
-          <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
 
-          {/* Rutas protegidas */}
-          <Route element={<ProtectedRoute isAuthenticated={isAuthenticated} />}>
-            {/* Todas las rutas que necesitan el Sidebar y están protegidas */}
-            <Route element={<MainLayout />}>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} /> {/* Redirección por defecto si no hay ruta específica */}
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/registro" element={<RegistroPage />} />
-              <Route path="/estadisticas" element={<EstadisticasPage />} />
-              <Route path="/fuerza" element={<FuerzaPage />} />
-            </Route>
-            {/* Fallback para cualquier otra ruta protegida que no coincida con las anteriores */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
+  // 3. Crea la función handleLogout
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
 
-          {/* Fallback para usuarios no autenticados que intentan acceder a cualquier ruta que no sea /login */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
-        </Routes>
-      </Router>
-    </>
-  );
+  return (
+    <>
+      <ReloadPrompt />
+      <PWABadge />
+      <Router>
+        <Routes>
+          {isAuthenticated ? (
+            // 4. Pasa 'handleLogout' a MainLayout
+            <Route path="/" element={<MainLayout onLogout={handleLogout} />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="registro" element={<RegistroPage />} />
+              <Route path="estadisticas" element={<EstadisticasPage />} />
+              <Route path="fuerza" element={<FuerzaPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          ) : (
+            // Rutas públicas (solo login)
+            <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
+          )}
+        </Routes>
+      </Router>
+    </>
+  );
 }
 
 export default App;
