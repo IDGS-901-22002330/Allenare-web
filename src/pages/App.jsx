@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import DashboardPage from './pages/DashboardPage';
-import LoginPage from './pages/LoginPage';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import DashboardPage from './DashboardPage';
+import LoginPage from './LoginPage';
+import AdminDashboardPage from './admin/AdminDashboardPage';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 import './App.css';
 
 function App() {
@@ -29,6 +30,13 @@ function App() {
           element={
             <ProtectedRoute isAuthenticated={isAuthenticated}>
               <DashboardPage />
+            </ProtectedRoute>
+          } />
+        <Route 
+          path="/admin" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <AdminDashboardPage />
             </ProtectedRoute>
           } />
         <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />

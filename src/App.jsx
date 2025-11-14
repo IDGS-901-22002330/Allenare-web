@@ -6,6 +6,7 @@ import RegistroPage from './pages/RegistroPage';
 import EstadisticasPage from './pages/EstadisticasPage';
 import FuerzaPage from './pages/FuerzaPage';
 import LoginPage from './pages/LoginPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 // import ProtectedRoute from './components/auth/ProtectedRoute.jsx'; // No lo estás usando aquí, lo cual está bien
 import Sidebar from './components/dashboard/Sidebar';
 import { auth } from './firebase.js'; // Importa tu instancia de auth
@@ -16,27 +17,27 @@ import './App.css';
 // Componente de layout principal para rutas autenticadas
 // 1. Recibe 'onLogout' como prop
 const MainLayout = ({ onLogout }) => (
-  <div className="dashboard-container">
-    <div className="content-area"><Outlet /></div> {/* Área para el contenido de la página */}
+  <div className="dashboard-container">
+    <div className="content-area"><Outlet /></div> {/* Área para el contenido de la página */}
     {/* 2. Pasa 'onLogout' al Sidebar */}
-    <Sidebar onLogout={onLogout} />
-  </div>
+    <Sidebar onLogout={onLogout} />
+  </div>
 );
 
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(() => {
-    try {
-      const item = window.localStorage.getItem('isAuthenticated');
-      return item === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      const item = window.localStorage.getItem('isAuthenticated');
+      return item === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
 
   const [currentUser, setCurrentUser] = useState(null); // Para almacenar el objeto de usuario de Firebase
 
-  useEffect(() => {
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setCurrentUser(user);
@@ -57,41 +58,41 @@ function App() {
       }
     });
     return () => unsubscribe(); // Limpiar el listener
-  }, [isAuthenticated]);
+  }, [isAuthenticated]);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
 
   // 3. Crea la función handleLogout
-  const handleLogout = () => {
-    setIsAuthenticated(false);
-  };
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
 
-  return (
-    <>
-      <ReloadPrompt />
-      <PWABadge />
-      <Router>
-        <Routes>
-          {isAuthenticated ? (
-            // 4. Pasa 'handleLogout' a MainLayout
-            <Route path="/" element={<MainLayout onLogout={handleLogout} />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<DashboardPage />} />
-              <Route path="registro" element={<RegistroPage />} />
-              <Route path="estadisticas" element={<EstadisticasPage />} />
-              <Route path="fuerza" element={<FuerzaPage />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Route>
-          ) : (
-            // Rutas públicas (solo login)
-            <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
-          )}
-        </Routes>
-      </Router>
-    </>
-  );
+  return (
+    <>
+      <ReloadPrompt />
+      <PWABadge />
+      <Router>
+        <Routes>
+          {isAuthenticated ? (
+            // 4. Pasa 'handleLogout' a MainLayout
+            <Route path="/" element={<MainLayout onLogout={handleLogout} />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="registro" element={<RegistroPage />} />
+              <Route path="estadisticas" element={<EstadisticasPage />} />
+              <Route path="fuerza" element={<FuerzaPage />} />
+              <Route path="admin" element={<AdminDashboardPage />} />
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          ) : (
+            // Rutas públicas (solo login)
+            <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
+          )}
+        </Routes>
+      </Router>
+    </>
+  );
 }
-
 export default App;
