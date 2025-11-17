@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { db, storage } from '../../firebase';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import React, { useState, useEffect } from "react";
+import { db } from "../../firebase";
+import { collection, addDoc, doc, setDoc } from "firebase/firestore";
 import {
   TextField,
   Button,
@@ -9,24 +8,25 @@ import {
   Typography,
   CircularProgress,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
 
-const ExerciseForm = ({ exerciseToEdit, onSave, onCancel }) => {
+const ExerciseForm = ({ exerciseToEdit, onSave, onCancel, showSnackbar }) => {
   const [formData, setFormData] = useState({
-    nombre: '',
-    grupoMuscular: '',
-    descripcion: '',
+    nombre: "",
+    grupoMuscular: "",
+    descripcion: "",
   });
-  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaURL, setMediaURL] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (exerciseToEdit) {
       setFormData({
-        nombre: exerciseToEdit.nombre || '',
-        grupoMuscular: exerciseToEdit.grupoMuscular || '',
-        descripcion: exerciseToEdit.descripcion || '',
+        nombre: exerciseToEdit.nombre || "",
+        grupoMuscular: exerciseToEdit.grupoMuscular || "",
+        descripcion: exerciseToEdit.descripcion || "",
       });
+      setMediaURL(exerciseToEdit.mediaURL || "");
     }
   }, [exerciseToEdit]);
 
@@ -35,44 +35,34 @@ const ExerciseForm = ({ exerciseToEdit, onSave, onCancel }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFileChange = (e) => {
-    if (e.target.files[0]) {
-      setMediaFile(e.target.files[0]);
-    }
-  };
+  // media is provided as a URL (video/image) to be shown in the app; no file upload here
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let mediaURL = exerciseToEdit?.mediaURL || '';
-
-      if (mediaFile) {
-        const storageRef = ref(storage, `exercise_media/${mediaFile.name}`);
-        const uploadTask = await uploadBytes(storageRef, mediaFile);
-        mediaURL = await getDownloadURL(uploadTask.ref);
-      }
-
       const exerciseData = {
         ...formData,
-        mediaURL,
+        mediaURL: mediaURL || exerciseToEdit?.mediaURL || "",
       };
 
       if (exerciseToEdit) {
         // Update existing document
-        const docRef = doc(db, 'exercises', exerciseToEdit.id);
+        const docRef = doc(db, "exercises", exerciseToEdit.id);
         await setDoc(docRef, exerciseData, { merge: true });
       } else {
         // Create new document
-        const docRef = await addDoc(collection(db, 'exercises'), exerciseData);
+        const docRef = await addDoc(collection(db, "exercises"), exerciseData);
         // Add the generated ID to the document
         await setDoc(docRef, { exerciseID: docRef.id }, { merge: true });
       }
 
+      if (showSnackbar) showSnackbar("Ejercicio guardado", "success");
       onSave();
     } catch (error) {
       console.error("Error saving exercise: ", error);
+      if (showSnackbar) showSnackbar("Error guardando ejercicio", "error");
     } finally {
       setLoading(false);
     }
@@ -81,7 +71,7 @@ const ExerciseForm = ({ exerciseToEdit, onSave, onCancel }) => {
   return (
     <Paper sx={{ p: 2 }}>
       <Typography variant="h6" gutterBottom>
-        {exerciseToEdit ? 'Editar Ejercicio' : 'Crear Nuevo Ejercicio'}
+        {exerciseToEdit ? "Editar Ejercicio" : "Crear Nuevo Ejercicio"}
       </Typography>
       <form onSubmit={handleSubmit}>
         <TextField
@@ -113,18 +103,21 @@ const ExerciseForm = ({ exerciseToEdit, onSave, onCancel }) => {
           margin="normal"
         />
         <Box sx={{ my: 2 }}>
-          <Button variant="contained" component="label">
-            Subir Media
-            <input type="file" hidden onChange={handleFileChange} />
-          </Button>
-          {mediaFile && <Typography sx={{ ml: 2, display: 'inline' }}>{mediaFile.name}</Typography>}
+          <TextField
+            label="Media URL (video/imagen)"
+            value={mediaURL}
+            onChange={(e) => setMediaURL(e.target.value)}
+            fullWidth
+            margin="normal"
+            placeholder="https://..."
+          />
         </Box>
-        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
           <Button onClick={onCancel} sx={{ mr: 1 }}>
             Cancelar
           </Button>
           <Button type="submit" variant="contained" disabled={loading}>
-            {loading ? <CircularProgress size={24} /> : 'Guardar'}
+            {loading ? <CircularProgress size={24} /> : "Guardar"}
           </Button>
         </Box>
       </form>

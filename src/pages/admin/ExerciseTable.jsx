@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { db } from '../../firebase';
-import { collection, getDocs, doc, deleteDoc } from 'firebase/firestore';
+import React, { useState, useEffect } from "react";
+import { db } from "../../firebase";
+import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 import {
   Table,
   TableBody,
@@ -13,19 +13,24 @@ import {
   IconButton,
   Box,
   CircularProgress,
-  Typography
-} from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+  Typography,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
-const ExerciseTable = ({ onEdit, onAddNew }) => {
+const ExerciseTable = ({ onEdit, onAddNew, showSnackbar }) => {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
   const fetchExercises = async () => {
     setLoading(true);
     try {
-      const querySnapshot = await getDocs(collection(db, 'exercises'));
+      const querySnapshot = await getDocs(collection(db, "exercises"));
       const exercisesList = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -42,28 +47,37 @@ const ExerciseTable = ({ onEdit, onAddNew }) => {
     fetchExercises();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de que quieres borrar este ejercicio?')) {
-      try {
-        await deleteDoc(doc(db, 'exercises', id));
-        // Refresh the list after deletion
-        fetchExercises();
-      } catch (error) {
-        console.error("Error deleting exercise: ", error);
-      }
+  const handleDeleteClick = (id) => {
+    setDeleteDialog({ open: true, id });
+  };
+
+  const handleDeleteConfirm = async () => {
+    try {
+      await deleteDoc(doc(db, "exercises", deleteDialog.id));
+      fetchExercises();
+      if (showSnackbar) showSnackbar("Ejercicio eliminado", "success");
+    } catch (error) {
+      console.error("Error deleting exercise: ", error);
+      if (showSnackbar) showSnackbar("Error al eliminar ejercicio", "error");
+    } finally {
+      setDeleteDialog({ open: false, id: null });
     }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialog({ open: false, id: null });
   };
 
   return (
     <Paper sx={{ p: 2 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
         <Typography variant="h6">Ejercicios</Typography>
         <Button variant="contained" onClick={onAddNew}>
           Añadir Nuevo Ejercicio
         </Button>
       </Box>
       {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
           <CircularProgress />
         </Box>
       ) : (
@@ -82,10 +96,16 @@ const ExerciseTable = ({ onEdit, onAddNew }) => {
                   <TableCell>{exercise.nombre}</TableCell>
                   <TableCell>{exercise.grupoMuscular}</TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => onEdit(exercise)} aria-label="edit">
+                    <IconButton
+                      onClick={() => onEdit(exercise)}
+                      aria-label="edit"
+                    >
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleDelete(exercise.id)} aria-label="delete">
+                    <IconButton
+                      onClick={() => handleDeleteClick(exercise.id)}
+                      aria-label="delete"
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -95,6 +115,22 @@ const ExerciseTable = ({ onEdit, onAddNew }) => {
           </Table>
         </TableContainer>
       )}
+      <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
+        <DialogTitle>Eliminar Ejercicio</DialogTitle>
+        <DialogContent>
+          ¿Estás seguro de que deseas eliminar este ejercicio?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel}>Cancelar</Button>
+          <Button
+            onClick={handleDeleteConfirm}
+            color="error"
+            variant="contained"
+          >
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Paper>
   );
 };
