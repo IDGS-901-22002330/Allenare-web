@@ -53,9 +53,10 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar }) => {
       // Load routine_exercises if needed
       const fetchRoutineExercises = async () => {
         try {
+          const sourceRoutineID = routineToEdit.routineID || routineToEdit.id;
           const q = query(
             collection(db, "routine_exercises"),
-            where("routineID", "==", routineToEdit.id)
+            where("routineID", "==", sourceRoutineID)
           );
           const snap = await getDocs(q);
           const loaded = snap.docs
@@ -136,47 +137,54 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar }) => {
       let routineRef;
       if (routineToEdit && routineToEdit.id) {
         routineRef = doc(db, "routines", routineToEdit.id);
+        // ensure routineID field is present and points to the routine doc id or existing routineID
+        const routineIdField = routineToEdit.routineID || routineToEdit.id;
         await setDoc(
           routineRef,
-          { nombre, tipo: "predefinida", userID },
+          { nombre, tipo: "predefinida", userID, routineID: routineIdField },
           { merge: true }
         );
-        // delete existing routine_exercises for this routine
+        // delete existing routine_exercises for this routine (match by routineID field or doc id)
+        const sourceRoutineID = routineToEdit.routineID || routineToEdit.id;
         const q = query(
           collection(db, "routine_exercises"),
-          where("routineID", "==", routineToEdit.id)
+          where("routineID", "==", sourceRoutineID)
         );
         const snap = await getDocs(q);
         for (const d of snap.docs) {
           await deleteDoc(doc(db, "routine_exercises", d.id));
         }
       } else {
-        const added = await addDoc(collection(db, "routines"), {
-          nombre,
-          tipo: "predefinida",
-          userID,
-        });
-        routineRef = added;
+        // create new routine doc with explicit routineID field equal to doc id
+        const newRoutineRef = doc(collection(db, "routines"));
+        const newRoutineID = newRoutineRef.id;
+        await setDoc(
+          newRoutineRef,
+          { nombre, tipo: "predefinida", userID, routineID: newRoutineID },
+          { merge: true }
+        );
+        routineRef = newRoutineRef;
       }
 
       const routineID =
-        routineToEdit && routineToEdit.id ? routineToEdit.id : routineRef.id;
+        routineToEdit && (routineToEdit.routineID || routineToEdit.id)
+          ? routineToEdit.routineID || routineToEdit.id
+          : routineRef.id;
 
       // Add routine_exercises
       for (let i = 0; i < steps.length; i++) {
         const s = steps[i];
-        // Convert numeric fields to integers (or null if empty)
-        const seriesNum =
-          s.series === "" || s.series == null
-            ? null
-            : parseInt(String(s.series), 10);
-        const repeticionesNum =
-          s.repeticiones === "" || s.repeticiones == null
-            ? null
-            : parseInt(String(s.repeticiones), 10);
+        // series and repeticiones must be saved as STRING (empty string if missing)
+        const seriesStr =
+          s.series == null || s.series === "" ? "" : String(s.series);
+        const repeticionesStr =
+          s.repeticiones == null || s.repeticiones === ""
+            ? ""
+            : String(s.repeticiones);
+        // tiempoDescansoSegundos must be saved as NUMBER (use 0 if empty)
         const descansoNum =
           s.tiempoDescansoSegundos === "" || s.tiempoDescansoSegundos == null
-            ? null
+            ? 0
             : parseInt(String(s.tiempoDescansoSegundos), 10);
         await addDoc(collection(db, "routine_exercises"), {
           routineID,
@@ -184,8 +192,8 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar }) => {
           exerciseNombre: s.exerciseNombre,
           exerciseMediaURL: s.exerciseMediaURL || "",
           orden: i,
-          series: seriesNum,
-          repeticiones: repeticionesNum,
+          series: seriesStr,
+          repeticiones: repeticionesStr,
           tiempoDescansoSegundos: descansoNum,
         });
       }

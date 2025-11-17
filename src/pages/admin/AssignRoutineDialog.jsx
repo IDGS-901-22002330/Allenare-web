@@ -11,7 +11,16 @@ import {
   Box,
 } from "@mui/material";
 import { db } from "../../firebase";
-import { collection, getDocs, addDoc, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  setDoc,
+  getDoc,
+  writeBatch,
+} from "firebase/firestore";
 
 const AssignRoutineDialog = ({
   open,
@@ -54,55 +63,135 @@ const AssignRoutineDialog = ({
 
     setAssigning(true);
     try {
-      // Clone the routine with tipo "personal" and new userID
-      const newRoutineData = {
-        nombre: routine.nombre,
+      // --------------------
+      // Paso 1: Leer los datos originales
+      // --------------------
+      const originalRef = doc(db, "routines", routine.id);
+      const originalSnap = await getDoc(originalRef);
+      const originalData =
+        originalSnap && originalSnap.exists()
+          ? { id: originalSnap.id, ...originalSnap.data() }
+          : { id: routine.id, ...routine };
+
+      // determinar posibles ids usados por los routine_exercises (doc id o routineID)
+      const sourceIDs = [originalData.id];
+      if (
+        originalData.routineID &&
+        originalData.routineID !== originalData.id
+      ) {
+        sourceIDs.push(originalData.routineID);
+      }
+
+      // obtener los ejercicios originales
+      let exercisesSnap;
+      if (sourceIDs.length === 1) {
+        const q = query(
+          collection(db, "routine_exercises"),
+          where("routineID", "==", sourceIDs[0])
+        );
+        exercisesSnap = await getDocs(q);
+      } else {
+        const q = query(
+          collection(db, "routine_exercises"),
+          where("routineID", "in", sourceIDs)
+        );
+        exercisesSnap = await getDocs(q);
+      }
+
+      // --------------------
+      // Paso 2: Crear la Nueva Rutina (El Padre) y preparar batches seguros
+      // --------------------
+      const MAX_BATCH_OPS = 500; // Firestore max writes per batch
+      // create a new doc ref with a generated id so we can include it in the payload
+      const newRoutineRef = doc(collection(db, "routines"));
+      const newRoutineID = newRoutineRef.id;
+      const newRoutinePayload = {
+        nombre: originalData.nombre || "",
         tipo: "personal",
         userID: selectedUser.id,
+        routineID: newRoutineID,
       };
-      const routineRef = await addDoc(
-        collection(db, "routines"),
-        newRoutineData
-      );
-      const newRoutineID = routineRef.id;
 
-      // Clone all routine_exercises
-      const q = query(
-        collection(db, "routine_exercises"),
-        where("routineID", "==", routine.id)
-      );
-      const snap = await getDocs(q);
-      for (const doc of snap.docs) {
-        const exerciseData = doc.data();
-        // Ensure numeric fields are stored as numbers
-        const seriesNum =
-          exerciseData.series == null
-            ? null
-            : parseInt(String(exerciseData.series), 10);
-        const repeticionesNum =
-          exerciseData.repeticiones == null
-            ? null
-            : parseInt(String(exerciseData.repeticiones), 10);
+      // We'll split writes into multiple batches if needed
+      let batch = writeBatch(db);
+      let opsInBatch = 0;
+
+      // Add parent write first
+      batch.set(newRoutineRef, newRoutinePayload, { merge: true });
+      opsInBatch += 1;
+
+      let batchesCommitted = 0;
+
+      // --------------------
+      // Paso 3: Clonar los Ejercicios (Los Hijos) dentro de batches con límite
+      // --------------------
+      for (const exDoc of exercisesSnap.docs) {
+        const exerciseData = exDoc.data();
+        // --------------------
+        // Paso 4: Corrección de Tipos de Dato
+        // --------------------
+        // series and repeticiones MUST be stored as STRING (use empty string if missing)
+        const seriesStr =
+          exerciseData.series == null || exerciseData.series === ""
+            ? ""
+            : String(exerciseData.series);
+        const repeticionesStr =
+          exerciseData.repeticiones == null || exerciseData.repeticiones === ""
+            ? ""
+            : String(exerciseData.repeticiones);
+        // tiempoDescansoSegundos must be NUMBER (use 0 if empty)
+        const ordenNum =
+          exerciseData.orden == null || exerciseData.orden === ""
+            ? 0
+            : parseInt(String(exerciseData.orden), 10);
         const descansoNum =
-          exerciseData.tiempoDescansoSegundos == null
-            ? null
+          exerciseData.tiempoDescansoSegundos == null ||
+          exerciseData.tiempoDescansoSegundos === ""
+            ? 0
             : parseInt(String(exerciseData.tiempoDescansoSegundos), 10);
 
-        await addDoc(collection(db, "routine_exercises"), {
+        const newExRef = doc(collection(db, "routine_exercises"));
+        const newExPayload = {
           routineID: newRoutineID,
           exerciseID: exerciseData.exerciseID,
           exerciseNombre: exerciseData.exerciseNombre,
           exerciseMediaURL: exerciseData.exerciseMediaURL || "",
-          orden: exerciseData.orden,
-          series: seriesNum,
-          repeticiones: repeticionesNum,
+          orden: ordenNum,
+          series: seriesStr,
+          repeticiones: repeticionesStr,
           tiempoDescansoSegundos: descansoNum,
-        });
+        };
+
+        // If batch is full, commit and start a new one
+        if (opsInBatch >= MAX_BATCH_OPS) {
+          await batch.commit();
+          batchesCommitted += 1;
+          batch = writeBatch(db);
+          opsInBatch = 0;
+        }
+
+        batch.set(newExRef, newExPayload, { merge: true });
+        opsInBatch += 1;
+      }
+
+      // Commit the last batch if it has operations
+      if (opsInBatch > 0) {
+        await batch.commit();
+        batchesCommitted += 1;
+      }
+
+      if (batchesCommitted > 1 && showSnackbar) {
+        showSnackbar(
+          `Asignación completada en ${batchesCommitted} batches (rutina id: ${newRoutineID})`,
+          "info"
+        );
       }
 
       if (showSnackbar)
         showSnackbar(
-          `Rutina asignada a ${selectedUser.email || selectedUser.nombre}`,
+          `Rutina asignada a ${
+            selectedUser.email || selectedUser.nombre
+          } (id: ${newRoutineID})`,
           "success"
         );
       if (onSuccess) onSuccess();
