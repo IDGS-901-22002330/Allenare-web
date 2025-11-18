@@ -116,8 +116,8 @@ const ChallengeTable = ({ onEdit, onAddNew, showSnackbar }) => {
           <CircularProgress />
         </Box>
       ) : (
-        <TableContainer>
-          <Table>
+        <TableContainer sx={{ maxHeight: "65vh" }}>
+          <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>Nombre</TableCell>

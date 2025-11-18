@@ -3,12 +3,12 @@
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f0f2f5;
+  background-color: var(--bg-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 .login-container {
-  background: white;
+  background: var(--bg-secondary);
   padding: 2rem 2.5rem;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -19,5 +19,5 @@
 
 .login-container h2 {
   margin-bottom: 0.5rem;
-  color: #333;
+  color: var(--text-primary);
 }

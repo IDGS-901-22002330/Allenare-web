@@ -77,25 +77,30 @@ const CombinedRecentWorkouts = () => {
   }
 
   return (
-    <div className="recent-workouts-card">
+    <div className="workouts-card">
       <h3>Entrenamientos Recientes</h3>
       {combinedWorkouts.length === 0 ? (
         <p>No hay entrenamientos registrados aún.</p>
       ) : (
-        <ul>
+        <div className="workouts-list">
           {combinedWorkouts.map((workout) => (
-            <li key={workout.id}>
-              {workout.workoutType === 'running' ? (
-                <span>🏃‍♂️ {workout.distance} km – {workout.duration} min</span>
-              ) : (
-                <span>🏋️‍♂️ {workout.type} – {workout.duration} min</span>
-              )}
-              <span style={{ float: 'right', color: '#888' }}>
-                {workout.date && workout.date.toDate().toLocaleDateString('es-ES')}
+            <div key={workout.id} className="workout-item">
+              <div className="workout-info">
+                <span className="workout-icon">
+                  {workout.workoutType === 'running' ? '🏃‍♂️' : '🏋️‍♂️'}
+                </span>
+                <span className="workout-details">
+                  {workout.workoutType === 'running'
+                    ? `${workout.distance} km – ${workout.duration} min`
+                    : `${workout.type} – ${workout.duration} min`}
+                </span>
+              </div>
+              <span className="workout-date">
+                {workout.date?.toDate().toLocaleDateString('es-ES')}
               </span>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );

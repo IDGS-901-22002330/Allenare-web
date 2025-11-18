@@ -1,21 +1,13 @@
 .stats-card {
   padding: 1rem;
   border-radius: 15px;
-  color: #fff;
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   text-align: left;
-  background: linear-gradient(135deg, #ff6b6b, #e63946);
+  background-color: var(--bg-secondary);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.stats-grid > div:nth-child(2) {
-  background: linear-gradient(135deg, #ff6b6b, #e63946);
-}
-
-.stats-grid > div:nth-child(3) {
-  background: linear-gradient(135deg, #ff6b6b, #e63946);
 }
 
 .stats-card h3 {

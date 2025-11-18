@@ -4,10 +4,10 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #ff6b6b, #e63946);
+  background-color: var(--bg-secondary);
   border-radius: 15px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  color: #fff;
+  color: var(--text-primary);
 }
 
 .distance-text-group {
@@ -37,7 +37,7 @@
 .chart-placeholder {
   width: 200px;
   height: 100px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: var(--bg-tertiary);
   border-radius: 8px;
   margin-left: 1rem;
   flex-grow: 1; /* Permite que el gráfico ocupe el espacio disponible */
