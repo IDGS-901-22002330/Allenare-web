@@ -31,35 +31,15 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AssignRoutineDialog from "./AssignRoutineDialog";
 
-const RoutineTable = ({ onEdit, onAddNew, showSnackbar }) => {
-  const [routines, setRoutines] = useState([]);
-  const [loading, setLoading] = useState(true);
+const RoutineTable = ({ routines = [], onEdit, onAddNew, showSnackbar, onRefresh, users = [] }) => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
   const [assignDialog, setAssignDialog] = useState({
     open: false,
     routine: null,
   });
 
-  const fetchRoutines = async () => {
-    setLoading(true);
-    try {
-      const q = query(
-        collection(db, "routines"),
-        where("tipo", "==", "predefinida")
-      );
-      const querySnapshot = await getDocs(q);
-      const list = querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-      setRoutines(list);
-    } catch (error) {
-      console.error("Error fetching routines:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Internal fetching removed in favor of props from parent
 
-  useEffect(() => {
-    fetchRoutines();
-  }, []);
 
   const handleDeleteClick = (id) => {
     setDeleteDialog({ open: true, id });
@@ -77,7 +57,7 @@ const RoutineTable = ({ onEdit, onAddNew, showSnackbar }) => {
         await deleteDoc(doc(db, "routine_exercises", d.id));
       }
       await deleteDoc(doc(db, "routines", deleteDialog.id));
-      fetchRoutines();
+      if (onRefresh) onRefresh();
       if (showSnackbar)
         showSnackbar("Rutina eliminada correctamente", "success");
     } catch (error) {
@@ -101,7 +81,7 @@ const RoutineTable = ({ onEdit, onAddNew, showSnackbar }) => {
   };
 
   const handleAssignSuccess = () => {
-    fetchRoutines();
+    if (onRefresh) onRefresh();
   };
 
   return (
@@ -113,47 +93,41 @@ const RoutineTable = ({ onEdit, onAddNew, showSnackbar }) => {
         </Button>
       </Box>
 
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <TableContainer sx={{ maxHeight: "65vh" }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+      <TableContainer sx={{ maxHeight: "65vh" }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nombre</TableCell>
+              <TableCell align="right">Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {routines.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell>{r.nombre}</TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={() => onEdit(r)} aria-label="edit">
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleAssignClick(r)}
+                    aria-label="assign"
+                    title="Asignar a Usuario"
+                  >
+                    <PersonAddIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteClick(r.id)}
+                    aria-label="delete"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {routines.map((r) => (
-                <TableRow key={r.id}>
-                  <TableCell>{r.nombre}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => onEdit(r)} aria-label="edit">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleAssignClick(r)}
-                      aria-label="assign"
-                      title="Asignar a Usuario"
-                    >
-                      <PersonAddIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteClick(r.id)}
-                      aria-label="delete"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
         <DialogTitle>Eliminar Rutina</DialogTitle>
         <DialogContent>
@@ -177,6 +151,7 @@ const RoutineTable = ({ onEdit, onAddNew, showSnackbar }) => {
         onClose={handleAssignClose}
         onSuccess={handleAssignSuccess}
         showSnackbar={showSnackbar}
+        users={users}
       />
     </Paper>
   );

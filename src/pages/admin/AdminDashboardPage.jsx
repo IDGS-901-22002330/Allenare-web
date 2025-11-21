@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { db } from "../../firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import ExerciseTable from "./ExerciseTable";
 import ExerciseForm from "./ExerciseForm";
 import RoutineTable from "./RoutineTable";
@@ -12,22 +14,102 @@ import {
   ButtonGroup,
   Snackbar,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 
 const AdminDashboardPage = () => {
   const [currentSection, setCurrentSection] = useState("exercises"); // 'exercises' | 'routines' | 'challenges'
+  const [loading, setLoading] = useState(false);
 
-  // Exercises state
+  // Data state
+  const [exercises, setExercises] = useState([]);
+  const [routines, setRoutines] = useState([]);
+  const [challenges, setChallenges] = useState([]);
+  const [users, setUsers] = useState([]);
+
+  // Exercises UI state
   const [view, setView] = useState("table"); // 'table' or 'form'
   const [currentExercise, setCurrentExercise] = useState(null);
 
-  // Routines state
+  // Routines UI state
   const [routineView, setRoutineView] = useState("table"); // 'table' or 'builder'
   const [currentRoutine, setCurrentRoutine] = useState(null);
 
-  // Challenges state
+  // Challenges UI state
   const [challengeView, setChallengeView] = useState("table"); // 'table' or 'form'
   const [currentChallenge, setCurrentChallenge] = useState(null);
+
+  // Fetching functions
+  const fetchExercises = useCallback(async () => {
+    setLoading(true);
+    try {
+      const querySnapshot = await getDocs(collection(db, "exercises"));
+      const list = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setExercises(list);
+    } catch (error) {
+      console.error("Error fetching exercises: ", error);
+      showSnackbar("Error al cargar ejercicios", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchRoutines = useCallback(async () => {
+    setLoading(true);
+    try {
+      const q = query(
+        collection(db, "routines"),
+        where("tipo", "==", "predefinida")
+      );
+      const querySnapshot = await getDocs(q);
+      const list = querySnapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setRoutines(list);
+    } catch (error) {
+      console.error("Error fetching routines:", error);
+      showSnackbar("Error al cargar rutinas", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchChallenges = useCallback(async () => {
+    setLoading(true);
+    try {
+      const snap = await getDocs(collection(db, "challenges"));
+      setChallenges(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.error("Error fetching challenges", e);
+      showSnackbar("Error al cargar retos", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const snap = await getDocs(collection(db, "users"));
+      const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      setUsers(list);
+    } catch (e) {
+      console.error("Error fetching users", e);
+    }
+  }, []);
+
+  // Initial fetch based on section
+  useEffect(() => {
+    if (currentSection === "exercises") fetchExercises();
+    if (currentSection === "routines") {
+      fetchRoutines();
+      fetchUsers();
+    }
+    if (currentSection === "challenges") {
+      fetchChallenges();
+      fetchUsers();
+    }
+  }, [currentSection, fetchExercises, fetchRoutines, fetchChallenges, fetchUsers]);
 
   // Exercises handlers
   const handleEdit = (exercise) => {
@@ -43,6 +125,7 @@ const AdminDashboardPage = () => {
   const handleFormSave = () => {
     setView("table");
     setCurrentExercise(null);
+    fetchExercises();
   };
 
   const handleFormCancel = () => {
@@ -64,6 +147,7 @@ const AdminDashboardPage = () => {
   const handleRoutineSave = () => {
     setRoutineView("table");
     setCurrentRoutine(null);
+    fetchRoutines();
   };
 
   const handleRoutineCancel = () => {
@@ -85,6 +169,7 @@ const AdminDashboardPage = () => {
   const handleChallengeSave = () => {
     setChallengeView("table");
     setCurrentChallenge(null);
+    fetchChallenges();
   };
 
   const handleChallengeCancel = () => {
@@ -132,59 +217,77 @@ const AdminDashboardPage = () => {
         </ButtonGroup>
       </Box>
 
-      {currentSection === "exercises" && (
+      {loading && (view === "table" && routineView === "table" && challengeView === "table") ? (
+        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
         <>
-          {view === "table" ? (
-            <ExerciseTable
-              onEdit={handleEdit}
-              onAddNew={handleAddNew}
-              showSnackbar={showSnackbar}
-            />
-          ) : (
-            <ExerciseForm
-              exerciseToEdit={currentExercise}
-              onSave={handleFormSave}
-              onCancel={handleFormCancel}
-              showSnackbar={showSnackbar}
-            />
+          {currentSection === "exercises" && (
+            <>
+              {view === "table" ? (
+                <ExerciseTable
+                  exercises={exercises}
+                  onEdit={handleEdit}
+                  onAddNew={handleAddNew}
+                  showSnackbar={showSnackbar}
+                  onRefresh={fetchExercises}
+                />
+              ) : (
+                <ExerciseForm
+                  exerciseToEdit={currentExercise}
+                  onSave={handleFormSave}
+                  onCancel={handleFormCancel}
+                  showSnackbar={showSnackbar}
+                />
+              )}
+            </>
           )}
-        </>
-      )}
 
-      {currentSection === "routines" && (
-        <>
-          {routineView === "table" ? (
-            <RoutineTable
-              onEdit={handleEditRoutine}
-              onAddNew={handleAddRoutine}
-              showSnackbar={showSnackbar}
-            />
-          ) : (
-            <RoutineBuilder
-              routineToEdit={currentRoutine}
-              onSave={handleRoutineSave}
-              onCancel={handleRoutineCancel}
-              showSnackbar={showSnackbar}
-            />
+          {currentSection === "routines" && (
+            <>
+              {routineView === "table" ? (
+                <RoutineTable
+                  routines={routines}
+                  onEdit={handleEditRoutine}
+                  onAddNew={handleAddRoutine}
+                  showSnackbar={showSnackbar}
+                  onRefresh={fetchRoutines}
+                  users={users}
+                />
+              ) : (
+                <RoutineBuilder
+                  routineToEdit={currentRoutine}
+                  onSave={handleRoutineSave}
+                  onCancel={handleRoutineCancel}
+                  showSnackbar={showSnackbar}
+                  exercises={exercises}
+                />
+              )}
+            </>
           )}
-        </>
-      )}
 
-      {currentSection === "challenges" && (
-        <>
-          {challengeView === "table" ? (
-            <ChallengeTable
-              onEdit={handleEditChallenge}
-              onAddNew={handleAddChallenge}
-              showSnackbar={showSnackbar}
-            />
-          ) : (
-            <ChallengeForm
-              challengeToEdit={currentChallenge}
-              onSave={handleChallengeSave}
-              onCancel={handleChallengeCancel}
-              showSnackbar={showSnackbar}
-            />
+          {currentSection === "challenges" && (
+            <>
+              {challengeView === "table" ? (
+                <ChallengeTable
+                  challenges={challenges}
+                  users={users}
+                  onEdit={handleEditChallenge}
+                  onAddNew={handleAddChallenge}
+                  showSnackbar={showSnackbar}
+                  onRefresh={fetchChallenges}
+                />
+              ) : (
+                <ChallengeForm
+                  challengeToEdit={currentChallenge}
+                  users={users}
+                  onSave={handleChallengeSave}
+                  onCancel={handleChallengeCancel}
+                  showSnackbar={showSnackbar}
+                />
+              )}
+            </>
           )}
         </>
       )}

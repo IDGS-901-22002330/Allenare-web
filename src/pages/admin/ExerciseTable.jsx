@@ -22,30 +22,11 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const ExerciseTable = ({ onEdit, onAddNew, showSnackbar }) => {
-  const [exercises, setExercises] = useState([]);
-  const [loading, setLoading] = useState(true);
+const ExerciseTable = ({ exercises = [], onEdit, onAddNew, showSnackbar, onRefresh }) => {
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
-  const fetchExercises = async () => {
-    setLoading(true);
-    try {
-      const querySnapshot = await getDocs(collection(db, "exercises"));
-      const exercisesList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setExercises(exercisesList);
-    } catch (error) {
-      console.error("Error fetching exercises: ", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Internal fetching removed in favor of props from parent
 
-  useEffect(() => {
-    fetchExercises();
-  }, []);
 
   const handleDeleteClick = (id) => {
     setDeleteDialog({ open: true, id });
@@ -54,7 +35,7 @@ const ExerciseTable = ({ onEdit, onAddNew, showSnackbar }) => {
   const handleDeleteConfirm = async () => {
     try {
       await deleteDoc(doc(db, "exercises", deleteDialog.id));
-      fetchExercises();
+      if (onRefresh) onRefresh();
       if (showSnackbar) showSnackbar("Ejercicio eliminado", "success");
     } catch (error) {
       console.error("Error deleting exercise: ", error);
@@ -76,45 +57,39 @@ const ExerciseTable = ({ onEdit, onAddNew, showSnackbar }) => {
           Añadir Nuevo Ejercicio
         </Button>
       </Box>
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <TableContainer sx={{ maxHeight: "65vh" }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Grupo Muscular</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+      <TableContainer sx={{ maxHeight: "65vh" }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nombre</TableCell>
+              <TableCell>Grupo Muscular</TableCell>
+              <TableCell align="right">Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {exercises.map((exercise) => (
+              <TableRow key={exercise.id}>
+                <TableCell>{exercise.nombre}</TableCell>
+                <TableCell>{exercise.grupoMuscular}</TableCell>
+                <TableCell align="right">
+                  <IconButton
+                    onClick={() => onEdit(exercise)}
+                    aria-label="edit"
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteClick(exercise.id)}
+                    aria-label="delete"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {exercises.map((exercise) => (
-                <TableRow key={exercise.id}>
-                  <TableCell>{exercise.nombre}</TableCell>
-                  <TableCell>{exercise.grupoMuscular}</TableCell>
-                  <TableCell align="right">
-                    <IconButton
-                      onClick={() => onEdit(exercise)}
-                      aria-label="edit"
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteClick(exercise.id)}
-                      aria-label="delete"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
         <DialogTitle>Eliminar Ejercicio</DialogTitle>
         <DialogContent>

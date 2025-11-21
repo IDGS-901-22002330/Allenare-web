@@ -17,7 +17,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 
-const ChallengeForm = ({ challengeToEdit, onSave, onCancel, showSnackbar }) => {
+const ChallengeForm = ({ challengeToEdit, onSave, onCancel, showSnackbar, users = [] }) => {
   const [form, setForm] = useState({
     nombre: "",
     descripcion: "",
@@ -26,7 +26,6 @@ const ChallengeForm = ({ challengeToEdit, onSave, onCancel, showSnackbar }) => {
   const [fechaInicio, setFechaInicio] = useState(null);
   const [fechaFin, setFechaFin] = useState(null);
   const [tipo, setTipo] = useState("comunitario");
-  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [saving, setSaving] = useState(false);
 
@@ -39,7 +38,9 @@ const ChallengeForm = ({ challengeToEdit, onSave, onCancel, showSnackbar }) => {
       });
       setTipo(challengeToEdit.tipo || "comunitario");
       if (challengeToEdit.assignedUserID) {
-        setSelectedUser({ id: challengeToEdit.assignedUserID });
+        // Try to find the user in the passed users list, otherwise create a minimal object
+        const foundUser = users.find(u => u.id === challengeToEdit.assignedUserID);
+        setSelectedUser(foundUser || { id: challengeToEdit.assignedUserID });
       } else {
         setSelectedUser(null);
       }
@@ -57,26 +58,7 @@ const ChallengeForm = ({ challengeToEdit, onSave, onCancel, showSnackbar }) => {
         setFechaFin(f);
       }
     }
-  }, [challengeToEdit]);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const snap = await getDocs(collection(db, "users"));
-        const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        console.log("Loaded users for challenge form:", list); // DEBUG
-        setUsers(list);
-        // if editing and assignedUserID present, try to resolve full user
-        if (challengeToEdit && challengeToEdit.assignedUserID) {
-          const u = list.find((x) => x.id === challengeToEdit.assignedUserID);
-          if (u) setSelectedUser(u);
-        }
-      } catch (e) {
-        console.error("Error loading users for challenge form", e);
-      }
-    };
-    fetchUsers();
-  }, [challengeToEdit]);
+  }, [challengeToEdit, users]);
 
   const handleChange = (e) =>
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));

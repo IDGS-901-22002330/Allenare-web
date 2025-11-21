@@ -28,31 +28,16 @@ const AssignRoutineDialog = ({
   onClose,
   onSuccess,
   showSnackbar,
+  users = [],
 }) => {
-  const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [loading, setLoading] = useState(false);
   const [assigning, setAssigning] = useState(false);
 
   useEffect(() => {
     if (open) {
-      const fetchUsers = async () => {
-        setLoading(true);
-        try {
-          const snap = await getDocs(collection(db, "users"));
-          const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-          setUsers(list);
-        } catch (e) {
-          console.error("Error loading users:", e);
-          if (showSnackbar) showSnackbar("Error al cargar usuarios", "error");
-        } finally {
-          setLoading(false);
-        }
-      };
-      fetchUsers();
       setSelectedUser(null);
     }
-  }, [open, showSnackbar]);
+  }, [open]);
 
   const handleAssign = async () => {
     if (!selectedUser || !routine) {
@@ -146,7 +131,7 @@ const AssignRoutineDialog = ({
             : parseInt(String(exerciseData.orden), 10);
         const descansoNum =
           exerciseData.tiempoDescansoSegundos == null ||
-          exerciseData.tiempoDescansoSegundos === ""
+            exerciseData.tiempoDescansoSegundos === ""
             ? 0
             : parseInt(String(exerciseData.tiempoDescansoSegundos), 10);
 
@@ -189,8 +174,7 @@ const AssignRoutineDialog = ({
 
       if (showSnackbar)
         showSnackbar(
-          `Rutina asignada a ${
-            selectedUser.email || selectedUser.nombre
+          `Rutina asignada a ${selectedUser.email || selectedUser.nombre
           } (id: ${newRoutineID})`,
           "success"
         );
@@ -208,38 +192,32 @@ const AssignRoutineDialog = ({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Asignar Rutina a Usuario</DialogTitle>
       <DialogContent sx={{ pt: 2 }}>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <Autocomplete
-            options={users}
-            getOptionLabel={(u) =>
-              u?.email ? `${u.email} ${u.nombre ? `- ${u.nombre}` : ""}` : u.id
-            }
-            value={selectedUser}
-            onChange={(e, newVal) => setSelectedUser(newVal)}
-            filterOptions={(options, state) => {
-              const input = state.inputValue.toLowerCase();
-              return options.filter(
-                (opt) =>
-                  (opt.email && opt.email.toLowerCase().includes(input)) ||
-                  (opt.nombre && opt.nombre.toLowerCase().includes(input))
-              );
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Usuario"
-                placeholder="Buscar por email o nombre"
-                fullWidth
-              />
-            )}
-            isOptionEqualToValue={(option, value) => option.id === value?.id}
-            noOptionsText="No se encontraron usuarios"
-          />
-        )}
+        <Autocomplete
+          options={users}
+          getOptionLabel={(u) =>
+            u?.email ? `${u.email} ${u.nombre ? `- ${u.nombre}` : ""}` : u.id
+          }
+          value={selectedUser}
+          onChange={(e, newVal) => setSelectedUser(newVal)}
+          filterOptions={(options, state) => {
+            const input = state.inputValue.toLowerCase();
+            return options.filter(
+              (opt) =>
+                (opt.email && opt.email.toLowerCase().includes(input)) ||
+                (opt.nombre && opt.nombre.toLowerCase().includes(input))
+            );
+          }}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Usuario"
+              placeholder="Buscar por email o nombre"
+              fullWidth
+            />
+          )}
+          isOptionEqualToValue={(option, value) => option.id === value?.id}
+          noOptionsText="No se encontraron usuarios"
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={assigning}>

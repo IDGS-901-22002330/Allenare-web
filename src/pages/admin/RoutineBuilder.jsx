@@ -27,25 +27,13 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 
-const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar }) => {
-  const [exercisesLibrary, setExercisesLibrary] = useState([]);
+const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar, exercises = [] }) => {
   const [steps, setSteps] = useState([]);
   const [nombre, setNombre] = useState("");
   const nameRef = useRef(null);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    const fetchExercises = async () => {
-      try {
-        const q = collection(db, "exercises");
-        const snap = await getDocs(q);
-        setExercisesLibrary(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-      } catch (e) {
-        console.error("Error loading exercises library", e);
-      }
-    };
-    fetchExercises();
-  }, []);
+  // Internal fetching of exercises removed in favor of props from parent
 
   useEffect(() => {
     if (routineToEdit) {
@@ -231,7 +219,7 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar }) => {
               Biblioteca de Ejercicios
             </Typography>
             <List>
-              {exercisesLibrary.map((ex) => (
+              {exercises.map((ex) => (
                 <ListItem
                   key={ex.id}
                   secondaryAction={

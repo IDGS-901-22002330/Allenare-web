@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword, setPersistence, inMemoryPersistence } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebase.js';
-import './LoginForm.css';
+import { Box, TextField, Button, Alert } from '@mui/material';
 
 const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -13,8 +13,6 @@ const LoginForm = ({ onLogin }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await setPersistence(auth, inMemoryPersistence);
-
       await signInWithEmailAndPassword(auth, email, password);
 
       setError('');
@@ -26,26 +24,41 @@ const LoginForm = ({ onLogin }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="login-form">
-      {error && <p className="error-message">{error}</p>}
-      <div className="form-group">
-        <input
-          type="text"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-      <div className="form-group">
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
-      <button type="submit" className="login-button">Ingresar</button>
-    </form>
+    <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        id="email"
+        label="Email Address"
+        name="email"
+        autoComplete="email"
+        autoFocus
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <TextField
+        margin="normal"
+        required
+        fullWidth
+        name="password"
+        label="Password"
+        type="password"
+        id="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <Button
+        type="submit"
+        fullWidth
+        variant="contained"
+        sx={{ mt: 3, mb: 2 }}
+      >
+        Ingresar
+      </Button>
+    </Box>
   );
 };
 

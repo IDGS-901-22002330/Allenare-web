@@ -22,27 +22,11 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-const ChallengeTable = ({ onEdit, onAddNew, showSnackbar }) => {
-  const [challenges, setChallenges] = useState([]);
-  const [loading, setLoading] = useState(true);
+const ChallengeTable = ({ challenges = [], onEdit, onAddNew, showSnackbar, onRefresh }) => {
   const [usersMap, setUsersMap] = useState({});
   const [deleteDialog, setDeleteDialog] = useState({ open: false, id: null });
 
-  const fetchChallenges = async () => {
-    setLoading(true);
-    try {
-      const snap = await getDocs(collection(db, "challenges"));
-      setChallenges(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    } catch (e) {
-      console.error("Error fetching challenges", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchChallenges();
-  }, []);
+  // Internal fetching removed in favor of props from parent
 
   useEffect(() => {
     // load users map to display assigned users
@@ -68,7 +52,7 @@ const ChallengeTable = ({ onEdit, onAddNew, showSnackbar }) => {
   const handleDeleteConfirm = async () => {
     try {
       await deleteDoc(doc(db, "challenges", deleteDialog.id));
-      fetchChallenges();
+      if (onRefresh) onRefresh();
       if (showSnackbar) showSnackbar("Reto eliminado", "success");
     } catch (e) {
       console.error("Error deleting challenge", e);
@@ -111,53 +95,46 @@ const ChallengeTable = ({ onEdit, onAddNew, showSnackbar }) => {
         </Button>
       </Box>
 
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <TableContainer sx={{ maxHeight: "65vh" }}>
-          <Table stickyHeader>
-            <TableHead>
-              <TableRow>
-                <TableCell>Nombre</TableCell>
-                <TableCell>Tipo</TableCell>
-                <TableCell>Fecha Inicio</TableCell>
-                <TableCell>Fecha Fin</TableCell>
-                <TableCell align="right">Acciones</TableCell>
+      <TableContainer sx={{ maxHeight: "65vh" }}>
+        <Table stickyHeader>
+          <TableHead>
+            <TableRow>
+              <TableCell>Nombre</TableCell>
+              <TableCell>Tipo</TableCell>
+              <TableCell>Fecha Inicio</TableCell>
+              <TableCell>Fecha Fin</TableCell>
+              <TableCell align="right">Acciones</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {challenges.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell>{c.nombre}</TableCell>
+                <TableCell>
+                  {c.tipo === "asignado" ? "Asignado" : "Comunitario"}
+                  {c.tipo === "asignado" && c.assignedUserID
+                    ? ` (${usersMap[c.assignedUserID]?.email || c.assignedUserID
+                    })`
+                    : ""}
+                </TableCell>
+                <TableCell>{formatDate(c.fechaInicio)}</TableCell>
+                <TableCell>{formatDate(c.fechaFin)}</TableCell>
+                <TableCell align="right">
+                  <IconButton onClick={() => onEdit(c)} aria-label="edit">
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => handleDeleteClick(c.id)}
+                    aria-label="delete"
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {challenges.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>{c.nombre}</TableCell>
-                  <TableCell>
-                    {c.tipo === "asignado" ? "Asignado" : "Comunitario"}
-                    {c.tipo === "asignado" && c.assignedUserID
-                      ? ` (${
-                          usersMap[c.assignedUserID]?.email || c.assignedUserID
-                        })`
-                      : ""}
-                  </TableCell>
-                  <TableCell>{formatDate(c.fechaInicio)}</TableCell>
-                  <TableCell>{formatDate(c.fechaFin)}</TableCell>
-                  <TableCell align="right">
-                    <IconButton onClick={() => onEdit(c)} aria-label="edit">
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      onClick={() => handleDeleteClick(c.id)}
-                      aria-label="delete"
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      )}
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
         <DialogTitle>Eliminar Reto</DialogTitle>
         <DialogContent>
