@@ -1,4 +1,10 @@
-.PWABadge-toast {
+.ReloadPrompt-container {
+    padding: 0;
+    margin: 0;
+    width: 0;
+    height: 0;
+}
+.ReloadPrompt-toast {
     position: fixed;
     right: 0;
     bottom: 0;
@@ -12,10 +18,10 @@
     background-color: var(--bg-secondary);
     color: var(--text-primary);
 }
-.PWABadge-toast-message {
+.ReloadPrompt-toast-message {
     margin-bottom: 8px;
 }
-.PWABadge-toast-button {
+.ReloadPrompt-toast-button {
     outline: none;
     margin-right: 5px;
 }

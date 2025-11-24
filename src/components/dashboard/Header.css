@@ -25,7 +25,7 @@
 
 .user-info p {
   margin: 0;
-  color: #777;
+  color: var(--text-secondary);
 }
 
 .header-icons {
@@ -36,7 +36,7 @@
 .icon-circle {
   width: 65px;
   height: 65px;
-  background-color: #e0e0e0;
+  background-color: var(--bg-tertiary);
   border-radius: 50%;
   display: flex;
   align-items: center;

@@ -3,14 +3,14 @@ html, body {
   padding: 0;
   height: 100%;
   font-family: Arial, sans-serif;
-  background-color: #f0f2f5;
+  background-color: var(--bg-primary);
   justify-content: center;
   align-items: center;
 }
 .dashboard-container {
   display: flex;
   height: 100vh; /* Ocupa toda la altura de la ventana */
-  background-color: #f0f2f5; /* Color de fondo general */
+  background-color: var(--bg-primary); /* Color de fondo general */
   padding: 1.5rem; /* Espaciado alrededor del contenedor principal */
   box-sizing: border-box; /* Incluye padding en el cálculo de la altura/ancho */
   max-width: 1200px; /* Ajusta según sea necesario */
