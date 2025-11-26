@@ -10,6 +10,7 @@ import ListAltIcon from "@mui/icons-material/ListAlt";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import GroupIcon from "@mui/icons-material/Group";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
+import { Timeline } from "@mui/icons-material";
 
 const Sidebar = ({ onLogout }) => {
   const location = useLocation();
@@ -18,6 +19,7 @@ const Sidebar = ({ onLogout }) => {
   const generalItems = [
     { path: "/dashboard", icon: <DashboardIcon />, label: "Dashboard" },
     { path: "/estadisticas", icon: <AssessmentIcon />, label: "Estadísticas" },
+    { path: "/analitics", icon: <Timeline/> , label: "Analiticas"}
   ];
 
   const adminItems = [

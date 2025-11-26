@@ -15,6 +15,7 @@ import { auth } from './firebase.js';
 import ReloadPrompt from './ReloadPrompt';
 import PWABadge from './PWABadge';
 import './App.css';
+import Analitics from './pages/Analitics.jsx';
 
 // Componente de layout principal para rutas autenticadas
 const MainLayout = ({ onLogout }) => (
@@ -89,6 +90,7 @@ function App() {
               <Route path="profile" element={<ProfilePage />} />
               <Route path="admin/:section?" element={<AdminDashboardPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="analitics" element={<Analitics />} />
             </Route>
           ) : (
             <>
