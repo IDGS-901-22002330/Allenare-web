@@ -18,12 +18,6 @@ const Header = ({ showIcons = true, username = "(username)", email = "(correo)",
           <p>{email}</p>
         </div>
       </div>
-      {showIcons && (
-        <div className="header-icons">
-          <div className="icon-circle">⚙️</div>
-          <div className="icon-circle">🔔</div>
-        </div>
-      )}
     </header>
   );
 };

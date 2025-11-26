@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Grid, Typography, Paper, Card, CardContent, Avatar, Button, CircularProgress } from '@mui/material';
 import { auth, db } from '../firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
 import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
@@ -15,6 +16,7 @@ const DashboardPage = () => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(auth.currentUser);
+  const [firestoreUser, setFirestoreUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     workouts: 0,
@@ -28,24 +30,31 @@ const DashboardPage = () => {
 
       try {
         setLoading(true);
-        // Check User Role
+
+        // Fetch User Data for Header and Role Check
         const userDocRef = doc(db, 'users', user.uid);
         const userDocSnap = await getDoc(userDocRef);
 
-        if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          if (userData.role !== 'admin') {
-            // Not an admin, redirect
-            navigate('/registro');
-            return;
-          }
-        } else {
-          // No user doc, maybe redirect to login or profile?
+        if (!userDocSnap.exists()) {
+          await signOut(auth);
           navigate('/login');
           return;
         }
 
-        // User is Admin, fetch Dashboard Data
+        const userData = userDocSnap.data();
+        setFirestoreUser(userData);
+
+        // Check Admin Role
+        const role = userData.role ? userData.role.toLowerCase() : '';
+        const tipo = userData.tipo ? userData.tipo.toLowerCase() : '';
+
+        if (role !== 'admin' && tipo !== 'admin') {
+          await signOut(auth);
+          navigate('/login');
+          return;
+        }
+
+        // Fetch All Users
         const usersSnap = await getDocs(collection(db, "users"));
         const usersList = usersSnap.docs.map(doc => ({
           id: doc.id,
@@ -53,15 +62,14 @@ const DashboardPage = () => {
         }));
         setUsers(usersList);
 
-        const userId = user.uid;
-
+        // Fetch ALL Workouts (Global Stats)
         // Running Workouts
-        const runningQuery = query(collection(db, 'running_workouts'), where('userId', '==', userId));
+        const runningQuery = query(collection(db, 'running_workouts'));
         const runningSnap = await getDocs(runningQuery);
         const runningDocs = runningSnap.docs.map(d => d.data());
 
         // Gym Workouts
-        const gymQuery = query(collection(db, 'gym_workouts'), where('userId', '==', userId));
+        const gymQuery = query(collection(db, 'gym_workouts'));
         const gymSnap = await getDocs(gymQuery);
 
         // Calculate Totals
@@ -74,19 +82,21 @@ const DashboardPage = () => {
           usersCount: usersSnap.size
         });
 
+        setLoading(false);
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-      } finally {
         setLoading(false);
       }
     };
 
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       if (user) {
         checkRoleAndFetchData(user);
       } else {
-        setLoading(false);
+        // If no user, we might want to redirect to login or just wait
+        navigate('/login');
       }
     });
     return () => unsubscribe();
@@ -103,9 +113,9 @@ const DashboardPage = () => {
   return (
     <Box sx={{ p: 3, width: '100%', maxWidth: '1600px', margin: '0 auto' }}>
       <Header
-        username={currentUser?.displayName || "Usuario"}
+        username={firestoreUser?.nombre || firestoreUser?.displayName || currentUser?.displayName || "Usuario"}
         email={currentUser?.email || ""}
-        photoURL={currentUser?.photoURL}
+        photoURL={firestoreUser?.fotoURL || currentUser?.photoURL}
       />
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
