@@ -93,30 +93,6 @@ const AnaliticsCard = () => {
   return (
     <div className="analytics-card">
       <h2>Dashboard de Analíticas (Admin)</h2>
-
-      {/* Filtros por fecha */}
-      <div className="filters">
-        <label>
-          Desde:
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </label>
-
-        <label>
-          Hasta:
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </label>
-
-        <button onClick={loadPopularSports}>Aplicar filtros</button>
-      </div>
-
       <div className="cards">
         {/* Total de usuarios */}
         <div className="metric-box">
@@ -131,13 +107,38 @@ const AnaliticsCard = () => {
           {popularSports.length === 0 ? (
             <p>No hay actividades registradas en este rango.</p>
           ) : (
-            <ul>
-              {popularSports.map((sport, index) => (
-                <li key={index}>
-                  <strong>{sport.name}</strong>: {sport.count} registros
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul>
+                {popularSports.map((sport, index) => (
+                  <li key={index}>
+                    <strong>{sport.name}</strong>: {sport.count} registros
+                  </li>
+                ))}
+              </ul>
+              <div>
+                <div className="filters">
+                  <label>
+                    Desde:
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                  </label>
+
+                  <label>
+                    Hasta:
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                  </label>
+
+                  <button onClick={loadPopularSports}>Aplicar filtros</button>
+                </div>
+              </div>
+            </>
           )}
         </div>
       </div>
