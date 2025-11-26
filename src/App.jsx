@@ -6,6 +6,9 @@ import RegistroPage from './pages/RegistroPage';
 import EstadisticasPage from './pages/EstadisticasPage';
 import FuerzaPage from './pages/FuerzaPage';
 import LoginPage from './pages/LoginPage';
+import SignUpPage from './pages/SignUpPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ProfilePage from './pages/ProfilePage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 // import ProtectedRoute from './components/auth/ProtectedRoute.jsx'; // No lo estás usando aquí, lo cual está bien
 import Sidebar from './components/dashboard/Sidebar';
@@ -83,12 +86,18 @@ function App() {
               <Route path="registro" element={<RegistroPage />} />
               <Route path="estadisticas" element={<EstadisticasPage />} />
               <Route path="fuerza" element={<FuerzaPage />} />
+              <Route path="profile" element={<ProfilePage />} />
               <Route path="admin" element={<AdminDashboardPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           ) : (
-            // Rutas públicas (solo login)
-            <Route path="*" element={<LoginPage onLogin={handleLogin} />} />
+            // Rutas públicas
+            <>
+              <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+              <Route path="/signup" element={<SignUpPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="*" element={<Navigate to="/login" replace />} />
+            </>
           )}
         </Routes>
       </Router>

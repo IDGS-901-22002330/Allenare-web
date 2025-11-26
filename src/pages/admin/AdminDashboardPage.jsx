@@ -7,6 +7,7 @@ import RoutineTable from "./RoutineTable";
 import RoutineBuilder from "./RoutineBuilder";
 import ChallengeTable from "./ChallengeTable";
 import ChallengeForm from "./ChallengeForm";
+import UserTable from "./UserTable";
 import {
   Box,
   Typography,
@@ -18,7 +19,7 @@ import {
 } from "@mui/material";
 
 const AdminDashboardPage = () => {
-  const [currentSection, setCurrentSection] = useState("exercises"); // 'exercises' | 'routines' | 'challenges'
+  const [currentSection, setCurrentSection] = useState("exercises"); // 'exercises' | 'routines' | 'challenges' | 'users'
   const [loading, setLoading] = useState(false);
 
   // Data state
@@ -89,12 +90,16 @@ const AdminDashboardPage = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
       const snap = await getDocs(collection(db, "users"));
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setUsers(list);
     } catch (e) {
       console.error("Error fetching users", e);
+      showSnackbar("Error al cargar usuarios", "error");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -103,10 +108,13 @@ const AdminDashboardPage = () => {
     if (currentSection === "exercises") fetchExercises();
     if (currentSection === "routines") {
       fetchRoutines();
-      fetchUsers();
+      fetchUsers(); // Needed for assigning routines? Or maybe just for the list
     }
     if (currentSection === "challenges") {
       fetchChallenges();
+      fetchUsers();
+    }
+    if (currentSection === "users") {
       fetchUsers();
     }
   }, [currentSection, fetchExercises, fetchRoutines, fetchChallenges, fetchUsers]);
@@ -214,6 +222,12 @@ const AdminDashboardPage = () => {
           >
             Retos
           </Button>
+          <Button
+            onClick={() => setCurrentSection("users")}
+            variant={currentSection === "users" ? "contained" : "outlined"}
+          >
+            Usuarios
+          </Button>
         </ButtonGroup>
       </Box>
 
@@ -288,6 +302,14 @@ const AdminDashboardPage = () => {
                 />
               )}
             </>
+          )}
+
+          {currentSection === "users" && (
+            <UserTable
+              users={users}
+              onRefresh={fetchUsers}
+              showSnackbar={showSnackbar}
+            />
           )}
         </>
       )}
