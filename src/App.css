@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -7,14 +8,15 @@ html, body {
   justify-content: center;
   align-items: center;
 }
+
 .dashboard-container {
   display: flex;
-  height: 100vh; /* Ocupa toda la altura de la ventana */
-  background-color: var(--bg-primary); /* Color de fondo general */
-  padding: 1.5rem; /* Espaciado alrededor del contenedor principal */
-  box-sizing: border-box; /* Incluye padding en el cálculo de la altura/ancho */
-  max-width: 1200px; /* Ajusta según sea necesario */
-  margin: 0 auto; /* Centra el contenedor */
+  height: 100vh;
+  background-color: var(--bg-primary);
+  padding: 1.5rem;
+  box-sizing: border-box;
+  max-width: 1200px;
+  margin: 0 auto;
   align-items: center;
 }
 
@@ -22,9 +24,9 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding-right: 2rem; /* Espacio entre el contenido y el sidebar */
+  padding-right: 2rem;
   box-sizing: border-box;
-  overflow-y: auto; /* Habilita el scroll si el contenido es demasiado largo */
+  overflow-y: auto;
 }
 
 .stats-grid {

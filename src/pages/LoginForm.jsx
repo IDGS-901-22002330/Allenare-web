@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { auth } from '../firebase.js';
-import { Box, TextField, Button, Alert } from '@mui/material';
+import { Box, TextField, Button, Alert, Link, Divider, Typography } from '@mui/material';
+import GoogleIcon from '@mui/icons-material/Google';
 
 const LoginForm = ({ onLogin }) => {
   const [email, setEmail] = useState('');
@@ -14,12 +15,23 @@ const LoginForm = ({ onLogin }) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-
       setError('');
       onLogin();
       navigate('/dashboard');
     } catch (err) {
       setError('Email o contraseña incorrectos. ' + err.message);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      setError('');
+      onLogin();
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Error al iniciar sesión con Google: ' + err.message);
     }
   };
 
@@ -31,7 +43,7 @@ const LoginForm = ({ onLogin }) => {
         required
         fullWidth
         id="email"
-        label="Email Address"
+        label="Correo Electrónico"
         name="email"
         autoComplete="email"
         autoFocus
@@ -43,13 +55,20 @@ const LoginForm = ({ onLogin }) => {
         required
         fullWidth
         name="password"
-        label="Password"
+        label="Contraseña"
         type="password"
         id="password"
         autoComplete="current-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+        <Link component={RouterLink} to="/forgot-password" variant="body2">
+          ¿Olvidaste tu contraseña?
+        </Link>
+      </Box>
+
       <Button
         type="submit"
         fullWidth
@@ -58,6 +77,27 @@ const LoginForm = ({ onLogin }) => {
       >
         Ingresar
       </Button>
+
+      <Divider sx={{ my: 2 }}>o</Divider>
+
+      <Button
+        fullWidth
+        variant="outlined"
+        startIcon={<GoogleIcon />}
+        onClick={handleGoogleLogin}
+        sx={{ mb: 2 }}
+      >
+        Ingresar con Google
+      </Button>
+
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+          ¿No tienes una cuenta?
+        </Typography>
+        <Link component={RouterLink} to="/signup" variant="body2">
+          Regístrate
+        </Link>
+      </Box>
     </Box>
   );
 };

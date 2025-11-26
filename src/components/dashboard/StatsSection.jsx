@@ -1,43 +1,54 @@
 import React from 'react';
+import { Paper, Typography, Box } from '@mui/material';
 import './StatsSection.css';
 
-const renderContent = (type) => {
-  switch (type) {
-    case 'workouts':
-      return (
-        <div className="stat-content">
-          <p>2/3 🏋️‍♂️</p>
-          <p>1/3 🏃‍♂️</p>
-        </div>
-      );
-    case 'distance':
-      return (
-        <div className="stat-content text-center distance-content">
-          <div className="distance-text-group">
-            <p className="main-stat">24 km</p>
-            <p className="sub-stat">¡Estás en racha!</p>
-          </div>
-          <span className="runner-icon">🏃‍♂️</span>
-        </div>
-      );
-    case 'goals':
-      return (
-        <div className="stat-content">
-          <p>21 km</p>
-          <p>10 km</p>
-        </div>
-      );
-    default:
-      return null;
-  }
-};
-
-const StatsSection = ({ title, content, className }) => {
+const StatsSection = ({ title, value, icon, description, className }) => {
   return (
-    <div className={`stats-card ${className || ''}`}>
-      <h3>{title}</h3>
-      {renderContent(content)}
-    </div>
+    <Paper
+      elevation={3}
+      className={`stats-card ${className || ''}`}
+      sx={{
+        p: 3,
+        borderRadius: 4,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        background: 'linear-gradient(135deg, #172a45 0%, #102035 100%)',
+        border: '1px solid rgba(56, 166, 255, 0.1)',
+        transition: 'transform 0.2s, box-shadow 0.2s',
+        '&:hover': {
+          transform: 'translateY(-5px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
+        }
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Typography variant="h6" sx={{ fontWeight: 'medium', fontSize: '1rem', color: 'text.secondary' }}>
+          {title}
+        </Typography>
+        <Box sx={{
+          bgcolor: 'rgba(56, 166, 255, 0.1)',
+          color: '#38a6ff',
+          p: 1,
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          {icon}
+        </Box>
+      </Box>
+
+      <Box>
+        <Typography variant="h4" sx={{ fontWeight: 'bold', mb: 1, color: 'text.primary' }}>
+          {value}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {description}
+        </Typography>
+      </Box>
+    </Paper>
   );
 };
 

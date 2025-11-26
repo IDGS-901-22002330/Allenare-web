@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { db } from "../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import ExerciseTable from "./ExerciseTable";
@@ -7,19 +8,26 @@ import RoutineTable from "./RoutineTable";
 import RoutineBuilder from "./RoutineBuilder";
 import ChallengeTable from "./ChallengeTable";
 import ChallengeForm from "./ChallengeForm";
+import UserTable from "./UserTable";
 import {
   Box,
   Typography,
-  Button,
-  ButtonGroup,
   Snackbar,
   Alert,
   CircularProgress,
 } from "@mui/material";
 
 const AdminDashboardPage = () => {
-  const [currentSection, setCurrentSection] = useState("exercises"); // 'exercises' | 'routines' | 'challenges'
+  const { section } = useParams();
+  const [currentSection, setCurrentSection] = useState(section || "exercises");
   const [loading, setLoading] = useState(false);
+
+  // Update currentSection when URL param changes
+  useEffect(() => {
+    if (section) {
+      setCurrentSection(section);
+    }
+  }, [section]);
 
   // Data state
   const [exercises, setExercises] = useState([]);
@@ -89,12 +97,16 @@ const AdminDashboardPage = () => {
   }, []);
 
   const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
       const snap = await getDocs(collection(db, "users"));
       const list = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       setUsers(list);
     } catch (e) {
       console.error("Error fetching users", e);
+      showSnackbar("Error al cargar usuarios", "error");
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -103,10 +115,13 @@ const AdminDashboardPage = () => {
     if (currentSection === "exercises") fetchExercises();
     if (currentSection === "routines") {
       fetchRoutines();
-      fetchUsers();
+      fetchUsers(); // Needed for assigning routines? Or maybe just for the list
     }
     if (currentSection === "challenges") {
       fetchChallenges();
+      fetchUsers();
+    }
+    if (currentSection === "users") {
       fetchUsers();
     }
   }, [currentSection, fetchExercises, fetchRoutines, fetchChallenges, fetchUsers]);
@@ -188,34 +203,21 @@ const AdminDashboardPage = () => {
   };
   const handleSnackClose = () => setSnack((s) => ({ ...s, open: false }));
 
+  const getTitle = () => {
+    switch (currentSection) {
+      case "exercises": return "Gestión de Ejercicios";
+      case "routines": return "Gestión de Rutinas";
+      case "challenges": return "Gestión de Retos";
+      case "users": return "Gestión de Usuarios";
+      default: return "Panel de Administración";
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Gestión de Contenido
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', mb: 4 }}>
+        {getTitle()}
       </Typography>
-
-      <Box sx={{ mb: 2 }}>
-        <ButtonGroup variant="outlined">
-          <Button
-            onClick={() => setCurrentSection("exercises")}
-            variant={currentSection === "exercises" ? "contained" : "outlined"}
-          >
-            Ejercicios
-          </Button>
-          <Button
-            onClick={() => setCurrentSection("routines")}
-            variant={currentSection === "routines" ? "contained" : "outlined"}
-          >
-            Rutinas
-          </Button>
-          <Button
-            onClick={() => setCurrentSection("challenges")}
-            variant={currentSection === "challenges" ? "contained" : "outlined"}
-          >
-            Retos
-          </Button>
-        </ButtonGroup>
-      </Box>
 
       {loading && (view === "table" && routineView === "table" && challengeView === "table") ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
@@ -288,6 +290,14 @@ const AdminDashboardPage = () => {
                 />
               )}
             </>
+          )}
+
+          {currentSection === "users" && (
+            <UserTable
+              users={users}
+              onRefresh={fetchUsers}
+              showSnackbar={showSnackbar}
+            />
           )}
         </>
       )}

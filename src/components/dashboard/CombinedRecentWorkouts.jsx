@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../../firebase.js';
-import './RecentWorkouts.css'; // Reutilizamos el mismo estilo
+import './RecentWorkouts.css';
 
 const CombinedRecentWorkouts = () => {
   const [combinedWorkouts, setCombinedWorkouts] = useState([]);
@@ -11,7 +11,6 @@ const CombinedRecentWorkouts = () => {
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged(user => {
       if (user) {
-        const userId = user.uid;
         let runningData = [];
         let gymData = [];
 
@@ -22,12 +21,12 @@ const CombinedRecentWorkouts = () => {
           setLoading(false);
         };
 
-        // Listener para running_workouts
-        const runningQuery = query(collection(db, 'running_workouts'), where('userId', '==', userId), orderBy('date', 'desc'));
+        // Listener for running_workouts (ALL users)
+        const runningQuery = query(collection(db, 'running_workouts'), orderBy('date', 'desc'));
         const unsubscribeRunning = onSnapshot(runningQuery, (snapshot) => {
           runningData = snapshot.docs.map(doc => ({
             id: doc.id,
-            workoutType: 'running', // Añadimos un tipo para diferenciarlo en el render
+            workoutType: 'running',
             ...doc.data()
           }));
           mergeAndSortWorkouts();
@@ -37,12 +36,12 @@ const CombinedRecentWorkouts = () => {
           setLoading(false);
         });
 
-        // Listener para gym_workouts
-        const gymQuery = query(collection(db, 'gym_workouts'), where('userId', '==', userId), orderBy('date', 'desc'));
+        // Listener for gym_workouts (ALL users)
+        const gymQuery = query(collection(db, 'gym_workouts'), orderBy('date', 'desc'));
         const unsubscribeGym = onSnapshot(gymQuery, (snapshot) => {
           gymData = snapshot.docs.map(doc => ({
             id: doc.id,
-            workoutType: 'gym', // Añadimos un tipo para diferenciarlo en el render
+            workoutType: 'gym',
             ...doc.data()
           }));
           mergeAndSortWorkouts();
@@ -52,7 +51,7 @@ const CombinedRecentWorkouts = () => {
           setLoading(false);
         });
 
-        // Limpiar listeners de Firestore
+        // Cleanup Firestore listeners
         return () => {
           unsubscribeRunning();
           unsubscribeGym();
@@ -64,7 +63,7 @@ const CombinedRecentWorkouts = () => {
       }
     });
 
-    // Limpiar listener de Auth
+    // Cleanup Auth listener
     return () => unsubscribeAuth();
   }, []);
 
@@ -91,7 +90,7 @@ const CombinedRecentWorkouts = () => {
                 </span>
                 <span className="workout-details">
                   {workout.workoutType === 'running'
-                    ? `${workout.distance} km – ${workout.duration} min`
+                    ? `${parseFloat(workout.distance).toFixed(2)} km – ${workout.duration} min`
                     : `${workout.type} – ${workout.duration} min`}
                 </span>
               </div>
