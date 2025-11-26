@@ -7,7 +7,6 @@ import StatsChart from '../components/estadisticas/StatsChart';
 const EstadisticasPage = () => {
   return (
     <div className="estadisticas-content">
-      <Header />
       <div className="estadisticas-stats-grid">
         <DistanceChart />
       </div>

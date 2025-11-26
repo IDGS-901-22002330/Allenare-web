@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { db } from "../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import ExerciseTable from "./ExerciseTable";
@@ -11,16 +12,22 @@ import UserTable from "./UserTable";
 import {
   Box,
   Typography,
-  Button,
-  ButtonGroup,
   Snackbar,
   Alert,
   CircularProgress,
 } from "@mui/material";
 
 const AdminDashboardPage = () => {
-  const [currentSection, setCurrentSection] = useState("exercises"); // 'exercises' | 'routines' | 'challenges' | 'users'
+  const { section } = useParams();
+  const [currentSection, setCurrentSection] = useState(section || "exercises");
   const [loading, setLoading] = useState(false);
+
+  // Update currentSection when URL param changes
+  useEffect(() => {
+    if (section) {
+      setCurrentSection(section);
+    }
+  }, [section]);
 
   // Data state
   const [exercises, setExercises] = useState([]);
@@ -196,40 +203,21 @@ const AdminDashboardPage = () => {
   };
   const handleSnackClose = () => setSnack((s) => ({ ...s, open: false }));
 
+  const getTitle = () => {
+    switch (currentSection) {
+      case "exercises": return "Gestión de Ejercicios";
+      case "routines": return "Gestión de Rutinas";
+      case "challenges": return "Gestión de Retos";
+      case "users": return "Gestión de Usuarios";
+      default: return "Panel de Administración";
+    }
+  };
+
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        Gestión de Contenido
+      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', mb: 4 }}>
+        {getTitle()}
       </Typography>
-
-      <Box sx={{ mb: 2 }}>
-        <ButtonGroup variant="outlined">
-          <Button
-            onClick={() => setCurrentSection("exercises")}
-            variant={currentSection === "exercises" ? "contained" : "outlined"}
-          >
-            Ejercicios
-          </Button>
-          <Button
-            onClick={() => setCurrentSection("routines")}
-            variant={currentSection === "routines" ? "contained" : "outlined"}
-          >
-            Rutinas
-          </Button>
-          <Button
-            onClick={() => setCurrentSection("challenges")}
-            variant={currentSection === "challenges" ? "contained" : "outlined"}
-          >
-            Retos
-          </Button>
-          <Button
-            onClick={() => setCurrentSection("users")}
-            variant={currentSection === "users" ? "contained" : "outlined"}
-          >
-            Usuarios
-          </Button>
-        </ButtonGroup>
-      </Box>
 
       {loading && (view === "table" && routineView === "table" && challengeView === "table") ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>

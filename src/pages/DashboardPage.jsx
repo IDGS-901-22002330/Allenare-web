@@ -1,33 +1,146 @@
-import React from 'react';
-import { Box, Grid, Typography, Paper } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Box, Grid, Typography, Paper, Card, CardContent, Avatar, Button, CircularProgress } from '@mui/material';
+import { auth, db } from '../firebase';
+import { collection, getDocs, query, where, doc, getDoc } from 'firebase/firestore';
+import FitnessCenterIcon from '@mui/icons-material/FitnessCenter';
+import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
+import GroupIcon from '@mui/icons-material/Group';
 import Header from '../components/dashboard/Header';
 import StatsSection from '../components/dashboard/StatsSection';
 import RouteMap from '../components/dashboard/RouteMap';
 import CombinedRecentWorkouts from '../components/dashboard/CombinedRecentWorkouts';
 
 const DashboardPage = () => {
+  const navigate = useNavigate();
+  const [users, setUsers] = useState([]);
+  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    workouts: 0,
+    distance: 0,
+    usersCount: 0
+  });
+
+  useEffect(() => {
+    const checkRoleAndFetchData = async (user) => {
+      if (!user) return;
+
+      try {
+        setLoading(true);
+        // Check User Role
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          if (userData.role !== 'admin') {
+            // Not an admin, redirect
+            navigate('/registro');
+            return;
+          }
+        } else {
+          // No user doc, maybe redirect to login or profile?
+          navigate('/login');
+          return;
+        }
+
+        // User is Admin, fetch Dashboard Data
+        const usersSnap = await getDocs(collection(db, "users"));
+        const usersList = usersSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setUsers(usersList);
+
+        const userId = user.uid;
+
+        // Running Workouts
+        const runningQuery = query(collection(db, 'running_workouts'), where('userId', '==', userId));
+        const runningSnap = await getDocs(runningQuery);
+        const runningDocs = runningSnap.docs.map(d => d.data());
+
+        // Gym Workouts
+        const gymQuery = query(collection(db, 'gym_workouts'), where('userId', '==', userId));
+        const gymSnap = await getDocs(gymQuery);
+
+        // Calculate Totals
+        const totalDistance = runningDocs.reduce((acc, curr) => acc + (parseFloat(curr.distance) || 0), 0);
+        const totalWorkouts = runningSnap.size + gymSnap.size;
+
+        setStats({
+          workouts: totalWorkouts,
+          distance: totalDistance.toFixed(1),
+          usersCount: usersSnap.size
+        });
+
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      setCurrentUser(user);
+      if (user) {
+        checkRoleAndFetchData(user);
+      } else {
+        setLoading(false);
+      }
+    });
+    return () => unsubscribe();
+  }, [navigate]);
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box sx={{ p: 3, width: '100%', maxWidth: '1600px', margin: '0 auto' }}>
-      <Header />
+      <Header
+        username={currentUser?.displayName || "Usuario"}
+        email={currentUser?.email || ""}
+        photoURL={currentUser?.photoURL}
+      />
 
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={4}>
-          <StatsSection title="Días de entrenamiento" content="workouts" />
+          <StatsSection
+            title="Mis Entrenamientos"
+            value={stats.workouts}
+            icon={<FitnessCenterIcon fontSize="large" />}
+            description="Total de sesiones realizadas"
+          />
         </Grid>
         <Grid item xs={12} md={4}>
-          <StatsSection title="Total de km recorridos" content="distance" />
+          <StatsSection
+            title="Kilómetros Recorridos"
+            value={`${stats.distance} km`}
+            icon={<DirectionsRunIcon fontSize="large" />}
+            description="Distancia total corriendo"
+          />
         </Grid>
         <Grid item xs={12} md={4}>
-          <StatsSection title="Metas" content="goals" />
+          <StatsSection
+            title="Usuarios Registrados"
+            value={stats.usersCount}
+            icon={<GroupIcon fontSize="large" />}
+            description="Total de usuarios en la plataforma"
+          />
         </Grid>
       </Grid>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} lg={7}>
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12} lg={4}>
           <CombinedRecentWorkouts />
         </Grid>
-        <Grid item xs={12} lg={5}>
-          <RouteMap />
+        <Grid item xs={12} lg={8}>
+          <RouteMap users={users} />
         </Grid>
       </Grid>
     </Box>

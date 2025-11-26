@@ -27,12 +27,12 @@ import { db } from '../../firebase';
 
 const UserTable = ({ users, onRefresh, showSnackbar }) => {
     const [editUser, setEditUser] = useState(null);
-    const [role, setRole] = useState('');
+    const [tipo, setTipo] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleEditClick = (user) => {
         setEditUser(user);
-        setRole(user.tipo || 'user');
+        setTipo(user.tipo || 'user');
     };
 
     const handleClose = () => {
@@ -43,7 +43,7 @@ const UserTable = ({ users, onRefresh, showSnackbar }) => {
         if (!editUser) return;
         try {
             const userRef = doc(db, 'users', editUser.id);
-            await updateDoc(userRef, { role: role });
+            await updateDoc(userRef, { tipo: tipo });
             showSnackbar('Rol de usuario actualizado', 'success');
             onRefresh();
             handleClose();
@@ -103,13 +103,13 @@ const UserTable = ({ users, onRefresh, showSnackbar }) => {
                     <FormControl fullWidth sx={{ mt: 2 }}>
                         <InputLabel>Rol</InputLabel>
                         <Select
-                            value={role}
+                            value={tipo}
                             label="Rol"
-                            onChange={(e) => setRole(e.target.value)}
+                            onChange={(e) => setTipo(e.target.value)}
                         >
-                            <MenuItem value="user">Usuario</MenuItem>
-                            <MenuItem value="admin">Admin</MenuItem>
-                            <MenuItem value="entrenador">Entrenador</MenuItem>
+                            <MenuItem value="user">usuario</MenuItem>
+                            <MenuItem value="admin">admin</MenuItem>
+                            <MenuItem value="entrenador">entrenador</MenuItem>
                         </Select>
                     </FormControl>
                 </DialogContent>

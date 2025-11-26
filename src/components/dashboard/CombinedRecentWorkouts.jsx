@@ -91,7 +91,7 @@ const CombinedRecentWorkouts = () => {
                 </span>
                 <span className="workout-details">
                   {workout.workoutType === 'running'
-                    ? `${workout.distance} km – ${workout.duration} min`
+                    ? `${parseFloat(workout.distance).toFixed(2)} km – ${workout.duration} min`
                     : `${workout.type} – ${workout.duration} min`}
                 </span>
               </div>
