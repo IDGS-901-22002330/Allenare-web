@@ -13,6 +13,7 @@ import { auth } from './firebase.js'; // Importa tu instancia de auth
 import ReloadPrompt from './ReloadPrompt';
 import PWABadge from './PWABadge';
 import './App.css';
+import Analitics from './pages/Analitics.jsx';
 
 // Componente de layout principal para rutas autenticadas
 // 1. Recibe 'onLogout' como prop
@@ -85,6 +86,7 @@ function App() {
               <Route path="fuerza" element={<FuerzaPage />} />
               <Route path="admin" element={<AdminDashboardPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              <Route path="analitics" element={<Analitics />} />
             </Route>
           ) : (
             // Rutas públicas (solo login)

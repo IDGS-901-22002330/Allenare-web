@@ -7,6 +7,7 @@ import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AssignmentIcon from "@mui/icons-material/Assignment";
+import { Timeline } from "@mui/icons-material";
 
 const Sidebar = ({ onLogout }) => {
   const location = useLocation();
@@ -15,6 +16,7 @@ const Sidebar = ({ onLogout }) => {
   const menuItems = [
     { path: "/registro", icon: <AssignmentIcon />, label: "Registro" },
     { path: "/estadisticas", icon: <AssessmentIcon />, label: "Estadísticas" },
+    { path: "/analitics", icon: <Timeline />, label: "Analiticas"},
     { path: "/fuerza", icon: <FitnessCenterIcon />, label: "Fuerza" },
     { path: "/dashboard", icon: <DashboardIcon />, label: "Dashboard" },
     { path: "/admin", icon: <AdminPanelSettingsIcon />, label: "Admin" },

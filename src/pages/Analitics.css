@@ -1,0 +1,47 @@
+
+
+.analytics-card h3 {
+  margin-top: 0;
+  font-size: 2rem;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+/* Filtros */
+.filters {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.filters input {
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--bg-tertiary);
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Métricas tipo “workout item” */
+.metric-box {
+  padding: 1rem 1.2rem;
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-color);
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.metric-number {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: var(--text-primary);
+}
+
+.metric-label {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
