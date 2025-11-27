@@ -11,6 +11,7 @@ import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import GroupIcon from "@mui/icons-material/Group";
 import DirectionsRunIcon from "@mui/icons-material/DirectionsRun";
 import { Timeline } from "@mui/icons-material";
+import BarChartIcon from "@mui/icons-material/BarChart";
 
 const Sidebar = ({ onLogout }) => {
   const location = useLocation();
@@ -19,7 +20,7 @@ const Sidebar = ({ onLogout }) => {
   const generalItems = [
     { path: "/dashboard", icon: <DashboardIcon />, label: "Dashboard" },
     { path: "/estadisticas", icon: <AssessmentIcon />, label: "Estadísticas" },
-    { path: "/analitics", icon: <Timeline/> , label: "Analiticas"}
+    { path: "/analitics", icon: <Timeline />, label: "Analiticas" }
   ];
 
   const adminItems = [
@@ -27,6 +28,7 @@ const Sidebar = ({ onLogout }) => {
     { path: "/admin/routines", icon: <ListAltIcon />, label: "Rutinas" },
     { path: "/admin/challenges", icon: <EmojiEventsIcon />, label: "Retos" },
     { path: "/admin/users", icon: <GroupIcon />, label: "Usuarios" },
+    { path: "/admin/statistics", icon: <BarChartIcon />, label: "Estadísticas Admin" },
   ];
 
   const renderItem = (item) => {

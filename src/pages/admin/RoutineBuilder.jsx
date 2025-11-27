@@ -13,7 +13,6 @@ import {
 import {
   Box,
   Button,
-  Grid,
   List,
   ListItem,
   ListItemText,
@@ -33,7 +32,34 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar, exercis
   const nameRef = useRef(null);
   const [saving, setSaving] = useState(false);
 
-  // Internal fetching of exercises removed in favor of props from parent
+  // Load draft from localStorage on mount if not editing
+  useEffect(() => {
+    if (!routineToEdit) {
+      const savedDraft = localStorage.getItem("routineBuilderDraft");
+      if (savedDraft) {
+        try {
+          const parsed = JSON.parse(savedDraft);
+          setNombre(parsed.nombre || "");
+          setSteps(parsed.steps || []);
+        } catch (e) {
+          console.error("Error parsing draft", e);
+        }
+      }
+    }
+  }, [routineToEdit]);
+
+  // Save draft to localStorage whenever state changes (if not editing)
+  useEffect(() => {
+    if (!routineToEdit) {
+      const draft = { nombre, steps };
+      localStorage.setItem("routineBuilderDraft", JSON.stringify(draft));
+    }
+  }, [nombre, steps, routineToEdit]);
+
+  // Clear draft helper
+  const clearDraft = () => {
+    localStorage.removeItem("routineBuilderDraft");
+  };
 
   useEffect(() => {
     if (routineToEdit) {
@@ -114,7 +140,7 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar, exercis
     );
   };
 
-  const handleSave = async () => {
+  const handleSaveInternal = async () => {
     if (!nombre.trim()) {
       alert("El nombre de la rutina es requerido");
       return;
@@ -186,150 +212,323 @@ const RoutineBuilder = ({ routineToEdit, onSave, onCancel, showSnackbar, exercis
         });
       }
 
+      clearDraft(); // Clear draft on successful save
       if (onSave) onSave();
       if (showSnackbar)
         showSnackbar("Rutina guardada correctamente", "success");
-    } catch (e) {
-      console.error("Error saving routine", e);
+    } catch (error) {
+      console.error("Error saving routine", error);
       if (showSnackbar) showSnackbar("Error guardando rutina", "error");
     } finally {
       setSaving(false);
     }
   };
 
+  const handleCancelInternal = () => {
+    clearDraft(); // Clear draft on cancel
+    if (onCancel) onCancel();
+  };
+
   return (
-    <Paper sx={{ p: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        {routineToEdit ? "Editar Rutina" : "Crear Nueva Rutina"}
-      </Typography>
-      <Box sx={{ mb: 2 }}>
+    <Box sx={{ height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column', gap: 2, bgcolor: '#0f172a', p: 2, borderRadius: 2 }}>
+      <Paper
+        elevation={0}
+        sx={{
+          p: 3,
+          borderRadius: 3,
+          bgcolor: '#1e293b',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          flexShrink: 0,
+          border: '1px solid #334155'
+        }}
+      >
+        <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', color: '#60a5fa' }}>
+          {routineToEdit ? "Editar Rutina" : "Crear Nueva Rutina"}
+        </Typography>
         <TextField
           inputRef={nameRef}
-          label="Nombre de la rutina"
+          label="Nombre de la Rutina"
+          variant="outlined"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           fullWidth
+          placeholder="Ej: Rutina de Hipertrofia - Día 1"
+          sx={{
+            mt: 1,
+            '& .MuiOutlinedInput-root': {
+              color: '#f8fafc',
+              '& fieldset': { borderColor: '#475569' },
+              '&:hover fieldset': { borderColor: '#94a3b8' },
+              '&.Mui-focused fieldset': { borderColor: '#60a5fa' },
+            },
+            '& .MuiInputLabel-root': { color: '#94a3b8' },
+            '& .MuiInputLabel-root.Mui-focused': { color: '#60a5fa' }
+          }}
         />
-      </Box>
+      </Paper>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: "60vh", overflow: "auto" }}>
-            <Typography variant="subtitle1" gutterBottom>
+      <Box sx={{
+        flex: 1,
+        display: 'flex',
+        gap: 3,
+        overflow: 'hidden',
+        flexDirection: { xs: 'column', md: 'row' }
+      }}>
+        {/* Left Column: Exercises Library */}
+        <Paper sx={{
+          flex: { xs: 'none', md: 4 },
+          height: { xs: '40%', md: '100%' },
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          border: '1px solid #334155',
+          bgcolor: '#1e293b'
+        }}>
+          <Box sx={{ p: 2, borderBottom: '1px solid #334155', bgcolor: '#0f172a' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#f8fafc' }}>
               Biblioteca de Ejercicios
             </Typography>
-            <List>
-              {exercises.map((ex) => (
-                <ListItem
-                  key={ex.id}
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      onClick={() => handleAddExercise(ex)}
-                      aria-label="add"
-                    >
-                      <AddIcon />
-                    </IconButton>
-                  }
-                >
-                  <ListItemText
-                    primary={ex.nombre}
-                    secondary={ex.grupoMuscular}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2, height: "60vh", overflow: "auto" }}>
-            <Typography variant="subtitle1" gutterBottom>
-              Rutina en Creación
+            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+              Selecciona para agregar a la rutina
             </Typography>
-            <List>
-              {steps.map((s, idx) => (
-                <ListItem
-                  key={idx}
-                  sx={{ flexDirection: "column", alignItems: "stretch" }}
-                >
-                  <Box
+          </Box>
+          <List sx={{ flex: 1, overflowY: 'auto', p: 1 }}>
+            {exercises.map((ex) => (
+              <ListItem
+                key={ex.id}
+                sx={{
+                  mb: 1,
+                  borderRadius: 2,
+                  bgcolor: '#334155',
+                  border: '1px solid #475569',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    borderColor: '#60a5fa',
+                    bgcolor: '#475569',
+                    transform: 'translateY(-2px)',
+                    boxShadow: 2
+                  }
+                }}
+                secondaryAction={
+                  <IconButton
+                    edge="end"
+                    onClick={() => handleAddExercise(ex)}
                     sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      width: "100%",
+                      bgcolor: '#3b82f6',
+                      color: 'white',
+                      '&:hover': { bgcolor: '#2563eb' },
+                      width: 32,
+                      height: 32
                     }}
                   >
-                    <ListItemText primary={`${idx + 1}. ${s.exerciseNombre}`} />
-                    <Box>
-                      <IconButton
-                        onClick={() => move(idx, idx - 1)}
-                        aria-label="up"
-                      >
-                        <ArrowUpwardIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => move(idx, idx + 1)}
-                        aria-label="down"
-                      >
-                        <ArrowDownwardIcon />
-                      </IconButton>
-                      <IconButton
-                        onClick={() => handleRemoveStep(idx)}
-                        aria-label="remove"
-                      >
-                        <DeleteIcon />
-                      </IconButton>
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                }
+              >
+                <ListItemText
+                  primary={ex.nombre}
+                  secondary={ex.grupoMuscular}
+                  primaryTypographyProps={{ fontWeight: 600, fontSize: '0.95rem', color: '#f8fafc' }}
+                  secondaryTypographyProps={{ fontSize: '0.8rem', color: '#cbd5e1' }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+
+        {/* Right Column: Routine Steps */}
+        <Paper sx={{
+          flex: { xs: 'none', md: 8 },
+          height: { xs: '60%', md: '100%' },
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 3,
+          boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+          bgcolor: '#1e293b',
+          border: '1px solid #334155'
+        }}>
+          <Box sx={{ p: 2, borderBottom: '1px solid #334155', bgcolor: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#f8fafc' }}>
+                Estructura de la Rutina
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+                {steps.length} ejercicios agregados
+              </Typography>
+            </Box>
+            <Box>
+              <Button onClick={handleCancelInternal} sx={{ mr: 1, color: '#94a3b8', '&:hover': { color: '#f8fafc' } }}>
+                Cancelar
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSaveInternal}
+                disabled={saving}
+                sx={{ borderRadius: 2, px: 3, boxShadow: 2, bgcolor: '#3b82f6', '&:hover': { bgcolor: '#2563eb' } }}
+              >
+                {saving ? "Guardando..." : "Guardar Rutina"}
+              </Button>
+            </Box>
+          </Box>
+
+          <Box sx={{ flex: 1, overflowY: 'auto', p: 2 }}>
+            {steps.length === 0 ? (
+              <Box sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                color: '#64748b',
+                opacity: 0.7
+              }}>
+                <AddIcon sx={{ fontSize: 60, mb: 2, color: '#334155' }} />
+                <Typography variant="h6" sx={{ color: '#94a3b8' }}>Tu rutina está vacía</Typography>
+                <Typography variant="body2" sx={{ color: '#64748b' }}>Agrega ejercicios desde el panel izquierdo</Typography>
+              </Box>
+            ) : (
+              <List disablePadding>
+                {steps.map((s, idx) => (
+                  <Paper
+                    key={idx}
+                    elevation={0}
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px solid #334155',
+                      bgcolor: '#0f172a',
+                      transition: 'box-shadow 0.2s',
+                      '&:hover': { boxShadow: '0 4px 12px rgba(0,0,0,0.3)', borderColor: '#475569' }
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 2,
+                        pb: 1,
+                        borderBottom: '1px dashed #334155',
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Box sx={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          bgcolor: '#3b82f6',
+                          color: 'white',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontWeight: 'bold',
+                          fontSize: '0.85rem'
+                        }}>
+                          {idx + 1}
+                        </Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 'bold', color: '#f8fafc' }}>
+                          {s.exerciseNombre}
+                        </Typography>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton
+                          onClick={() => move(idx, idx - 1)}
+                          disabled={idx === 0}
+                          size="small"
+                          sx={{ border: '1px solid #334155', color: '#94a3b8', '&:hover': { color: '#f8fafc', bgcolor: '#334155' }, '&.Mui-disabled': { color: '#334155' } }}
+                        >
+                          <ArrowUpwardIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => move(idx, idx + 1)}
+                          disabled={idx === steps.length - 1}
+                          size="small"
+                          sx={{ border: '1px solid #334155', color: '#94a3b8', '&:hover': { color: '#f8fafc', bgcolor: '#334155' }, '&.Mui-disabled': { color: '#334155' } }}
+                        >
+                          <ArrowDownwardIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton
+                          onClick={() => handleRemoveStep(idx)}
+                          size="small"
+                          sx={{ ml: 1, color: '#ef4444', bgcolor: 'rgba(239, 68, 68, 0.1)', '&:hover': { bgcolor: '#ef4444', color: 'white' }, borderRadius: 1 }}
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Box>
                     </Box>
-                  </Box>
 
-                  <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                    <TextField
-                      label="Series"
-                      value={s.series}
-                      onChange={(e) =>
-                        handleChangeStep(idx, "series", e.target.value)
-                      }
-                      size="small"
-                    />
-                    <TextField
-                      label="Repeticiones"
-                      value={s.repeticiones}
-                      onChange={(e) =>
-                        handleChangeStep(idx, "repeticiones", e.target.value)
-                      }
-                      size="small"
-                    />
-                    <TextField
-                      label="Descanso (s)"
-                      value={s.tiempoDescansoSegundos}
-                      onChange={(e) =>
-                        handleChangeStep(
-                          idx,
-                          "tiempoDescansoSegundos",
-                          e.target.value
-                        )
-                      }
-                      size="small"
-                    />
-                  </Box>
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        </Grid>
-      </Grid>
-
-      <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
-        <Button onClick={onCancel} sx={{ mr: 1 }}>
-          Cancelar
-        </Button>
-        <Button variant="contained" onClick={handleSave} disabled={saving}>
-          {saving ? "Guardando..." : "Guardar Rutina"}
-        </Button>
+                    <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                      <TextField
+                        label="Series"
+                        value={s.series}
+                        onChange={(e) => handleChangeStep(idx, "series", e.target.value)}
+                        size="small"
+                        sx={{
+                          flex: 1,
+                          minWidth: '100px',
+                          '& .MuiOutlinedInput-root': {
+                            color: '#f8fafc',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#64748b' },
+                            '&.Mui-focused fieldset': { borderColor: '#60a5fa' },
+                          },
+                          '& .MuiInputLabel-root': { color: '#64748b' },
+                          '& .MuiInputLabel-root.Mui-focused': { color: '#60a5fa' }
+                        }}
+                        InputProps={{ sx: { borderRadius: 2 } }}
+                      />
+                      <TextField
+                        label="Repeticiones"
+                        value={s.repeticiones}
+                        onChange={(e) => handleChangeStep(idx, "repeticiones", e.target.value)}
+                        size="small"
+                        sx={{
+                          flex: 1,
+                          minWidth: '120px',
+                          '& .MuiOutlinedInput-root': {
+                            color: '#f8fafc',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#64748b' },
+                            '&.Mui-focused fieldset': { borderColor: '#60a5fa' },
+                          },
+                          '& .MuiInputLabel-root': { color: '#64748b' },
+                          '& .MuiInputLabel-root.Mui-focused': { color: '#60a5fa' }
+                        }}
+                        InputProps={{ sx: { borderRadius: 2 } }}
+                      />
+                      <TextField
+                        label="Descanso (seg)"
+                        value={s.tiempoDescansoSegundos}
+                        onChange={(e) => handleChangeStep(idx, "tiempoDescansoSegundos", e.target.value)}
+                        size="small"
+                        sx={{
+                          flex: 1,
+                          minWidth: '120px',
+                          '& .MuiOutlinedInput-root': {
+                            color: '#f8fafc',
+                            '& fieldset': { borderColor: '#334155' },
+                            '&:hover fieldset': { borderColor: '#64748b' },
+                            '&.Mui-focused fieldset': { borderColor: '#60a5fa' },
+                          },
+                          '& .MuiInputLabel-root': { color: '#64748b' },
+                          '& .MuiInputLabel-root.Mui-focused': { color: '#60a5fa' }
+                        }}
+                        InputProps={{ sx: { borderRadius: 2 } }}
+                      />
+                    </Box>
+                  </Paper>
+                ))}
+              </List>
+            )}
+          </Box>
+        </Paper>
       </Box>
-    </Paper>
+    </Box>
   );
 };
 

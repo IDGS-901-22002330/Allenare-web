@@ -9,6 +9,7 @@ import RoutineBuilder from "./RoutineBuilder";
 import ChallengeTable from "./ChallengeTable";
 import ChallengeForm from "./ChallengeForm";
 import UserTable from "./UserTable";
+import StatisticsSection from "./StatisticsSection";
 import {
   Box,
   Typography,
@@ -124,6 +125,12 @@ const AdminDashboardPage = () => {
     if (currentSection === "users") {
       fetchUsers();
     }
+    if (currentSection === "statistics") {
+      fetchUsers();
+      fetchRoutines();
+      fetchChallenges();
+      fetchExercises();
+    }
   }, [currentSection, fetchExercises, fetchRoutines, fetchChallenges, fetchUsers]);
 
   // Exercises handlers
@@ -209,6 +216,7 @@ const AdminDashboardPage = () => {
       case "routines": return "Gestión de Rutinas";
       case "challenges": return "Gestión de Retos";
       case "users": return "Gestión de Usuarios";
+      case "statistics": return "Estadísticas del Sistema";
       default: return "Panel de Administración";
     }
   };
@@ -297,6 +305,15 @@ const AdminDashboardPage = () => {
               users={users}
               onRefresh={fetchUsers}
               showSnackbar={showSnackbar}
+            />
+          )}
+
+          {currentSection === "statistics" && (
+            <StatisticsSection
+              users={users}
+              routines={routines}
+              challenges={challenges}
+              exercises={exercises}
             />
           )}
         </>
