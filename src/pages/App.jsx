@@ -7,6 +7,7 @@ import LoginPage from './LoginPage';
 import AdminDashboardPage from './admin/AdminDashboardPage';
 import ProtectedRoute from './ProtectedRoute'; // Corregido para apuntar al archivo correcto
 import './App.css';
+import Analitics from './Analitics';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null, true, o false
@@ -43,6 +44,7 @@ function App() {
             <Route path="admin" element={<AdminDashboardPage />} />
             {/* Agrega aquí otras rutas protegidas */}
             <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path='/analitics' element={<Analitics/>}/>
           </Route>
         </Routes>
       </Router>
