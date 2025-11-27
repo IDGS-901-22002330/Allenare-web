@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { db } from "../../firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import Snackbar from "@mui/material/Snackbar";
+import Alert from "@mui/material/Alert";
+import CircularProgress from "@mui/material/CircularProgress";
 import ExerciseTable from "./ExerciseTable";
 import ExerciseForm from "./ExerciseForm";
 import RoutineTable from "./RoutineTable";
@@ -9,14 +14,9 @@ import RoutineBuilder from "./RoutineBuilder";
 import ChallengeTable from "./ChallengeTable";
 import ChallengeForm from "./ChallengeForm";
 import UserTable from "./UserTable";
+import UserProfileModal from "./UserProfileModal";
+import UnassignRoutineDialog from "./UnassignRoutineDialog";
 import StatisticsSection from "./StatisticsSection";
-import {
-  Box,
-  Typography,
-  Snackbar,
-  Alert,
-  CircularProgress,
-} from "@mui/material";
 
 const AdminDashboardPage = () => {
   const { section } = useParams();
@@ -47,6 +47,13 @@ const AdminDashboardPage = () => {
   // Challenges UI state
   const [challengeView, setChallengeView] = useState("table"); // 'table' or 'form'
   const [currentChallenge, setCurrentChallenge] = useState(null);
+
+  // Unassign Routine Dialog state
+  const [unassignDialogOpen, setUnassignDialogOpen] = useState(false);
+
+  // User Profile Modal state
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [selectedUserForProfile, setSelectedUserForProfile] = useState(null);
 
   // Fetching functions
   const fetchExercises = useCallback(async () => {
@@ -116,7 +123,8 @@ const AdminDashboardPage = () => {
     if (currentSection === "exercises") fetchExercises();
     if (currentSection === "routines") {
       fetchRoutines();
-      fetchUsers(); // Needed for assigning routines? Or maybe just for the list
+      fetchUsers();
+      fetchExercises(); // Ensure exercises are always loaded for RoutineBuilder
     }
     if (currentSection === "challenges") {
       fetchChallenges();
@@ -131,7 +139,13 @@ const AdminDashboardPage = () => {
       fetchChallenges();
       fetchExercises();
     }
-  }, [currentSection, fetchExercises, fetchRoutines, fetchChallenges, fetchUsers]);
+  }, [
+    currentSection,
+    fetchExercises,
+    fetchRoutines,
+    fetchChallenges,
+    fetchUsers,
+  ]);
 
   // Exercises handlers
   const handleEdit = (exercise) => {
@@ -199,6 +213,24 @@ const AdminDashboardPage = () => {
     setCurrentChallenge(null);
   };
 
+  const handleOpenUnassignDialog = () => {
+    setUnassignDialogOpen(true);
+  };
+
+  const handleCloseUnassignDialog = () => {
+    setUnassignDialogOpen(false);
+  };
+
+  const handleOpenUserProfile = (user) => {
+    setSelectedUserForProfile(user);
+    setProfileModalOpen(true);
+  };
+
+  const handleCloseUserProfile = () => {
+    setSelectedUserForProfile(null);
+    setProfileModalOpen(false);
+  };
+
   // Snackbar for notifications
   const [snack, setSnack] = useState({
     open: false,
@@ -212,22 +244,35 @@ const AdminDashboardPage = () => {
 
   const getTitle = () => {
     switch (currentSection) {
-      case "exercises": return "Gestión de Ejercicios";
-      case "routines": return "Gestión de Rutinas";
-      case "challenges": return "Gestión de Retos";
-      case "users": return "Gestión de Usuarios";
-      case "statistics": return "Estadísticas del Sistema";
-      default: return "Panel de Administración";
+      case "exercises":
+        return "Gestión de Ejercicios";
+      case "routines":
+        return "Gestión de Rutinas";
+      case "challenges":
+        return "Gestión de Retos";
+      case "users":
+        return "Gestión de Usuarios";
+      case "statistics":
+        return "Estadísticas del Sistema";
+      default:
+        return "Panel de Administración";
     }
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main', mb: 4 }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: "bold", color: "primary.main", mb: 4 }}
+      >
         {getTitle()}
       </Typography>
 
-      {loading && (view === "table" && routineView === "table" && challengeView === "table") ? (
+      {loading &&
+      view === "table" &&
+      routineView === "table" &&
+      challengeView === "table" ? (
         <Box sx={{ display: "flex", justifyContent: "center", my: 3 }}>
           <CircularProgress />
         </Box>
@@ -305,6 +350,7 @@ const AdminDashboardPage = () => {
               users={users}
               onRefresh={fetchUsers}
               showSnackbar={showSnackbar}
+              onOpenUserProfile={handleOpenUserProfile}
             />
           )}
 
@@ -318,6 +364,21 @@ const AdminDashboardPage = () => {
           )}
         </>
       )}
+      <UnassignRoutineDialog
+        open={unassignDialogOpen}
+        onClose={handleCloseUnassignDialog}
+        onSuccess={fetchUsers}
+        showSnackbar={showSnackbar}
+        users={users}
+      />
+      <UserProfileModal
+        open={profileModalOpen}
+        onClose={handleCloseUserProfile}
+        user={selectedUserForProfile}
+        availableRoutines={routines}
+        showSnackbar={showSnackbar}
+        onDataUpdate={fetchUsers}
+      />
       <Snackbar
         open={snack.open}
         autoHideDuration={4000}

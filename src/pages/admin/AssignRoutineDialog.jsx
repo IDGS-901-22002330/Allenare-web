@@ -49,6 +49,28 @@ const AssignRoutineDialog = ({
     setAssigning(true);
     try {
       // --------------------
+      // Validación de Unicidad: Verificar si el usuario ya tiene esta rutina asignada
+      // --------------------
+      const q = query(
+        collection(db, "routines"),
+        where("userID", "==", selectedUser.id),
+        where("nombre", "==", routine.nombre),
+        where("tipo", "==", "personal")
+      );
+      const existingRoutines = await getDocs(q);
+
+      if (!existingRoutines.empty) {
+        if (showSnackbar) {
+          showSnackbar(
+            `⚠️ El usuario ${
+              selectedUser.nombre || selectedUser.email
+            } ya tiene asignada la rutina "${routine.nombre}"`,
+            "warning"
+          );
+        }
+        setAssigning(false);
+        return;
+      } // --------------------
       // Paso 1: Leer los datos originales
       // --------------------
       const originalRef = doc(db, "routines", routine.id);
@@ -131,7 +153,7 @@ const AssignRoutineDialog = ({
             : parseInt(String(exerciseData.orden), 10);
         const descansoNum =
           exerciseData.tiempoDescansoSegundos == null ||
-            exerciseData.tiempoDescansoSegundos === ""
+          exerciseData.tiempoDescansoSegundos === ""
             ? 0
             : parseInt(String(exerciseData.tiempoDescansoSegundos), 10);
 
@@ -165,24 +187,20 @@ const AssignRoutineDialog = ({
         batchesCommitted += 1;
       }
 
-      if (batchesCommitted > 1 && showSnackbar) {
+      if (showSnackbar) {
         showSnackbar(
-          `Asignación completada en ${batchesCommitted} batches (rutina id: ${newRoutineID})`,
-          "info"
-        );
-      }
-
-      if (showSnackbar)
-        showSnackbar(
-          `Rutina asignada a ${selectedUser.email || selectedUser.nombre
-          } (id: ${newRoutineID})`,
+          `✓ Rutina "${routine.nombre}" asignada a ${
+            selectedUser.nombre || selectedUser.email
+          }`,
           "success"
         );
+      }
       if (onSuccess) onSuccess();
       onClose();
     } catch (e) {
       console.error("Error assigning routine:", e);
-      if (showSnackbar) showSnackbar("Error al asignar rutina", "error");
+      if (showSnackbar)
+        showSnackbar(`❌ Error al asignar rutina: ${e.message}`, "error");
     } finally {
       setAssigning(false);
     }
