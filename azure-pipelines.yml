@@ -35,8 +35,8 @@ stages:
         echo "--- Cleaning npm cache and node_modules ---"
         npm cache clean --force
         rm -rf node_modules
-        echo "--- Running npm ci ---"
-        npm ci
+        echo "--- Running npm ci with legacy peer deps ---"
+        npm ci --legacy-peer-deps
         echo "--- npm ci finished ---"
         echo "--- Running build ---"
         npx vite build
@@ -64,7 +64,7 @@ stages:
 
     - script: |
         echo "--- Installing dependencies for tests ---"
-        npm ci
+        npm ci --legacy-peer-deps
         echo "--- Running tests ---"
         npm test
       displayName: 'Install Deps & Run Tests'
