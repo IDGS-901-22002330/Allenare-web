@@ -76,7 +76,7 @@ stages:
         npm ci # Instalar dependencias necesarias para las pruebas (incluyendo devDependencies)
         echo "--- Running unit tests ---"
         npm test # Esto fallará la tarea si las pruebas fallan
-    - script: |
+    - task: PublishTestResults@2
       displayName: 'Publish Test Results'
       condition: always() # Publicar resultados incluso si las pruebas fallan
       inputs:
