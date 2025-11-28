@@ -64,7 +64,7 @@ stages:
 
     - script: |
         echo "--- Installing dependencies for tests ---"
-        npm ci --legacy-peer-deps
+        npm ci
         echo "--- Running tests ---"
         npm test
       displayName: 'Install Deps & Run Tests'
