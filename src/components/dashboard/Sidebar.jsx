@@ -19,7 +19,6 @@ const Sidebar = ({ onLogout }) => {
 
   const generalItems = [
     { path: "/dashboard", icon: <DashboardIcon />, label: "Dashboard" },
-    { path: "/estadisticas", icon: <AssessmentIcon />, label: "Estadísticas" },
     { path: "/analitics", icon: <Timeline />, label: "Analiticas" }
   ];
 

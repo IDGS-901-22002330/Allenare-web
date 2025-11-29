@@ -34,7 +34,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import SportsIcon from "@mui/icons-material/Sports";
 import PersonIcon from "@mui/icons-material/Person";
-import { db } from "../../firebase";
+import { db, auth } from "../../firebase";
 import {
   collection,
   query,
@@ -51,6 +51,8 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [processingDelete, setProcessingDelete] = useState(false);
   const [processingRoleChange, setProcessingRoleChange] = useState(null);
+
+  const currentUserId = auth.currentUser?.uid;
 
   const handleEditClick = (user) => {
     if (onOpenUserProfile) {
@@ -188,14 +190,14 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
         newRole === "admin"
           ? "admin"
           : newRole === "entrenador"
-          ? "trainer"
-          : "user";
+            ? "trainer"
+            : "user";
       const tipoVal =
         newRole === "admin"
           ? "admin"
           : newRole === "entrenador"
-          ? "entrenador"
-          : "user";
+            ? "entrenador"
+            : "user";
       await updateDoc(doc(db, "users", user.id), {
         tipo: tipoVal,
         role: roleVal,
@@ -297,8 +299,11 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
                           onChange={(e) =>
                             handleChangeRole(user, e.target.value)
                           }
+                          disabled={user.id === currentUserId}
                         >
-                          <MenuItem value={"admin"}>ADMIN</MenuItem>
+                          {normalizeRole(user) === "admin" && (
+                            <MenuItem value={"admin"}>ADMIN</MenuItem>
+                          )}
                           <MenuItem value={"entrenador"}>ENTRENADOR</MenuItem>
                           <MenuItem value={"user"}>USUARIO</MenuItem>
                         </Select>
@@ -308,6 +313,7 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
                         size="small"
                         color="error"
                         title="Eliminar usuario"
+                        disabled={user.id === currentUserId}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
@@ -318,6 +324,7 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
                     size="small"
                     sx={{ bgcolor: "action.hover" }}
                     title="Ver perfil completo"
+                    disabled={user.id === currentUserId}
                   >
                     <EditIcon fontSize="small" />
                   </IconButton>
@@ -398,8 +405,11 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
                           onChange={(e) =>
                             handleChangeRole(user, e.target.value)
                           }
+                          disabled={user.id === currentUserId}
                         >
-                          <MenuItem value={"admin"}>ADMIN</MenuItem>
+                          {normalizeRole(user) === "admin" && (
+                            <MenuItem value={"admin"}>ADMIN</MenuItem>
+                          )}
                           <MenuItem value={"entrenador"}>ENTRENADOR</MenuItem>
                           <MenuItem value={"user"}>USUARIO</MenuItem>
                         </Select>
@@ -411,6 +421,7 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
                       <IconButton
                         onClick={() => handleEditClick(user)}
                         size="small"
+                        disabled={user.id === currentUserId}
                       >
                         <EditIcon fontSize="small" />
                       </IconButton>
@@ -420,6 +431,7 @@ const UserTable = ({ users, onOpenUserProfile, onRefresh, showSnackbar }) => {
                         onClick={() => handleRequestDelete(user)}
                         size="small"
                         color="error"
+                        disabled={user.id === currentUserId}
                       >
                         <DeleteIcon fontSize="small" />
                       </IconButton>
